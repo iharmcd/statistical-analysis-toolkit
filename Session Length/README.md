@@ -1,2 +1,2 @@
-# Analytics
- Analytics Notebooks
+# Session Length
+Расчет средней длины сессии на пользователя
