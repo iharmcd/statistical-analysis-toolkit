@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import scipy.stats as st
-
+from tqdm import tqdm
 class Bootstrap:
     
     def __init__(self, alpha=0.05, bootstrap_samples=1000, statistic=np.mean,):
