@@ -1,2 +1,2 @@
 # Analytics
- Analytics Notebooks
+Short notebooks & scripts with some data analysis functions and trikcs
