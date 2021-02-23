@@ -13,7 +13,7 @@ class Bootstrap:
         self.left_quant = (1 - self.bootstrap_conf_level) / 2
         self.right_quant = 1 - (1 - self.bootstrap_conf_level) / 2
         
-    def __str__(self):
+    def __repr__(self):
         return f'{type(self)}\n\
 bootstrap_samples: {self.bootstrap_samples}\n\
 statistic: {self.statistic}\n\
