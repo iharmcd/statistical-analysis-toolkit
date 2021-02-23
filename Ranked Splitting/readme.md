@@ -58,8 +58,9 @@ print(np.mean(sample, axis=0))
   ```
  Сравнение с абсолютно случайным делением:
 ```python
-random_sample1 = np.random.choice(some_data, size=10, replace=False)
-random_sample2 = np.random.choice(list(set(some_data).difference(set(random_sample1))), size=10, replace=False)
+full_sample = list(range(100))
+random_sample1 = np.random.choice(full_sample, size=10, replace=False)
+random_sample2 = np.random.choice(list(set(full_sample).difference(set(random_sample1))), size=10, replace=False)
 
 >>> array([46,  3, 59,  1, 38, 17, 35, 52, 10, 64])
     array([18, 68, 74, 44, 58, 56, 20, 48, 55,  2])
