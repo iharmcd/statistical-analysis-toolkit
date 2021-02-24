@@ -3,8 +3,8 @@ from sklearn.model_selection import train_test_split
 
 class RankedSplit:
     
-    def __init__(self, random_state=42, separation=8, split_size=0.125):
-        self.separation = separation
+    def __init__(self, random_state=42, sep, split_size):
+        self.separation = sep
         self.random_state = random_state
         self.split_size = split_size
         
