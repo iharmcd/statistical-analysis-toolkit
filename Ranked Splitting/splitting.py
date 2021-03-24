@@ -15,14 +15,19 @@ separation_group_size: {self.separation}\n\
 extraction_size: {self.extraction}\n\
 random_state_parameter: {self.random_state}\n\
 split_size: {self.split_size}'
-
+    
+    def fit(self,dataset):
+        self.input_data = dataset
+        group_ratio = round(len(self.input_data)/ self.separation * self.extraction / len(self.input_data), 4) * 100
+        return f'output size for test and control groups will be {group_ratio}% for each group'
+    
     @staticmethod
     def get_rank(data,column):
         data['rank'] = data[column].sort_values(ascending=False).rank(ascending=False, method='first')
         return data
     
-    def get_split(self, data, column):
-        self.data = self.get_rank(data, column)
+    def get_split(self, column):
+        self.data = self.get_rank(self.input_data, column)
         self.column = column
         ranked_dataset = pd.concat([self.get_rank(self.data[self.data['rank'] % self.separation == i], self.column) 
                                     for i in range(0,self.separation)])
