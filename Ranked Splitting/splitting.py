@@ -3,14 +3,16 @@ from sklearn.model_selection import train_test_split
 
 class RankedSplit:
     
-    def __init__(self, sep, split_size, random_state=42):
-        self.separation = sep
+    def __init__(self, group_size, extraction_size, random_state=None):
+        self.separation = group_size
         self.random_state = random_state
-        self.split_size = split_size
+        self.extraction = extraction_size
+        self.split_size = extraction_size/group_size
         
     def __repr__(self):
         return f'{type(self)}\n\
-num_of_separations: {self.separation}\n\
+separation_group_size: {self.separation}\n\
+extraction_size: {self.extraction}\n\
 random_state_parameter: {self.random_state}\n\
 split_size: {self.split_size}'
 
