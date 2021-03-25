@@ -33,8 +33,7 @@ output_split_size: {self.split_size}'
         self.dataset = self.get_rank(data)
         
     def get_split(self):
-        self.ranked_dataset = pd.concat([self.get_rank(self.dataset[self.dataset['rank'] % self.separation == i]['data']) 
-                                            for i in range(0,self.separation)])
+        self.ranked_dataset = pd.concat([self.get_rank(self.dataset[self.dataset['rank'] % self.separation == i]['data']) for i in range(0,self.separation)])
         filter_ = self.ranked_dataset['rank'].value_counts().to_frame().query('rank < @self.separation').index
         self.ranked_dataset = self.ranked_dataset[~self.ranked_dataset['rank'].isin(filter_)]
         biggest_part, test = train_test_split(self.ranked_dataset, random_state=self.random_state, 
@@ -44,4 +43,3 @@ output_split_size: {self.split_size}'
                                       shuffle=True, stratify=biggest_part['rank'])
         return test, control
 
-      
