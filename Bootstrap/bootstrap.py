@@ -32,7 +32,7 @@ right_quant: {self.right_quant}'
         for i in tqdm(range(self.bootstrap_samples)): # извлечение подвыборок 
             sub_a = sample_a.sample(boot_len, replace = True, random_state=state).to_numpy()
             sub_b = sample_b.sample(boot_len, replace = True, random_state=state).to_numpy()
-            self.boot_data.append(self.statistic(sub_b-sub_a)) 
+            self.boot_data.append(self.statistic(sub_a-sub_b)) 
         
         self.quants = (pd.DataFrame(self.boot_data).quantile([self.left_quant, self.right_quant])
                       .reset_index().rename(index={0:'left', 1:'right'}, columns={'index':'quantiles', 0:'values'}))
@@ -60,7 +60,7 @@ right_quant: {self.right_quant}'
 
 def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,statistic=np.mean,**kwargs):
     state = np.random.RandomState(random_state)
-    left_quant, right_quant = (1-conf_level) / 2, 1-(1-conf_level) / 2
+    left_quant, right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
 
     values = []
     for i in (range(boot_samples)):
