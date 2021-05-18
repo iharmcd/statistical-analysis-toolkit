@@ -1,19 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import numpy as np
 import pandas as pd
 import scipy.stats as st
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+
 class Bootstrap:
     
-    def __init__(self, alpha=0.05, bootstrap_samples=1000, statistic=np.mean,):
-        self.bootstrap_samples = bootstrap_samples
+    def __init__(self, alpha=0.05, boot_samples=1000, statistic=np.mean,):
+        self.bootstrap_samples = boot_samples
         self.statistic = statistic
         self.bootstrap_conf_level = 1 - alpha
         self.left_quant = (1 - self.bootstrap_conf_level) / 2
         self.right_quant = 1 - (1 - self.bootstrap_conf_level) / 2
         
-    def __repr__(self):
+    def __str__(self):
         return f'{type(self)}\n\
 bootstrap_samples: {self.bootstrap_samples}\n\
 statistic: {self.statistic}\n\
@@ -27,8 +30,8 @@ right_quant: {self.right_quant}'
         
         state = np.random.RandomState(42)
         for i in tqdm(range(self.bootstrap_samples)): # извлечение подвыборок 
-            sub_a = sample_a.sample(boot_len, replace = True, random_state=state).values
-            sub_b = sample_b.sample(boot_len, replace = True, random_state=state).values
+            sub_a = sample_a.sample(boot_len, replace = True, random_state=state).to_numpy()
+            sub_b = sample_b.sample(boot_len, replace = True, random_state=state).to_numpy()
             self.boot_data.append(self.statistic(sub_b-sub_a)) 
         
         self.quants = (pd.DataFrame(self.boot_data).quantile([self.left_quant, self.right_quant])
@@ -53,6 +56,18 @@ right_quant: {self.right_quant}'
         plt.xlabel('средние')
         plt.ylabel('частота')
         plt.title(title)
+
+
+def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,statistic=np.mean,**kwargs):
+    state = np.random.RandomState(random_state)
+    left_quant, right_quant = (1-conf_level) / 2, 1-(1-conf_level) / 2
+
+    values = []
+    for i in (range(boot_samples)):
+        subsample = data.sample(frac=1, replace=True, random_state=state).to_numpy()
+        values.append(statistic(subsample, **kwargs))
+
+    return np.quantile(values, [left_quant, right_quant])
 
 
 
