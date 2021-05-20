@@ -53,7 +53,7 @@ right_quant: {self.right_quant}'
                 bar.set_edgecolor('black')
         
         plt.vlines(self.quants['values'],ymin=0,ymax=len(bars),linestyle='--')
-        plt.xlabel('средние')
+        plt.xlabel('значение разниц')
         plt.ylabel('частота')
         plt.title(title)
 
