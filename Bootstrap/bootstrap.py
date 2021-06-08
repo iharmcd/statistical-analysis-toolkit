@@ -68,6 +68,19 @@ def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,
         values.append(statistic(subsample, **kwargs))
 
     return np.quantile(values, [left_quant, right_quant])
+    
 
+def corr_ratio(categories, values):
+    cat,_ = pd.factorize(categories)
+    vals = np.array(values)
+    
+    ssw = 0
+    ssb = 0
+    for i in np.unique(cat):
+        filt = vals[np.argwhere(cat == i).flatten()]
+        ssw += sum((filt-np.mean(filt))**2)
+        ssb += len(filt)*(np.mean(filt)-np.mean(vals))**2
+        
+    return (ssb / (ssb + ssw))
 
 
