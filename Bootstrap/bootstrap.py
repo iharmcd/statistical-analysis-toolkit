@@ -71,16 +71,16 @@ def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,
     
 
 def corr_ratio(categories, values):
-    cat,_ = pd.factorize(categories)
-    vals = np.array(values)
+    cat = pd.factorize(categories)[0]
+    values = np.array(values)
     
     ssw = 0
     ssb = 0
     for i in np.unique(cat):
-        filt = vals[np.argwhere(cat == i).flatten()]
-        ssw += sum((filt-np.mean(filt))**2)
-        ssb += len(filt)*(np.mean(filt)-np.mean(vals))**2
-        
-    return (ssb / (ssb + ssw))
+        subgroup = values[np.argwhere(cat == i).flatten()]
+        ssw += np.sum((subgroup-np.mean(subgroup))**2)
+        ssb += len(subgroup)*(np.mean(subgroup)-np.mean(values))**2
+
+    return (ssb / (ssb + ssw))**.5
 
 
