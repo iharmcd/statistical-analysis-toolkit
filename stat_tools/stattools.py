@@ -70,7 +70,7 @@ def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,
     return np.quantile(values, [left_quant, right_quant])
     
 
-def corr_ratio(categories, values):
+def correlation_ratio(categories, values):
     cat = pd.factorize(categories)[0]
     values = np.array(values)
     
