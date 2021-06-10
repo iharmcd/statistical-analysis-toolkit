@@ -1,2 +1,2 @@
 # Analytics
-Short notebooks & scripts with some data analysis functions and trikcs
+Репозиторий инструментами для проведения статистического анализа, деления выборок, примерами использования библиотек python для решения аналитических задач
