@@ -59,12 +59,12 @@ right_quant: {self.right_quant}'
 
 
 def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,statistic=np.mean,**kwargs):
-    state = np.random.RandomState(random_state)
+    np.random.seed(random_state)
     left_quant, right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
-
+    
     values = []
     for i in (range(boot_samples)):
-        subsample = data.sample(frac=1, replace=True, random_state=state).to_numpy()
+        subsample = np.random.choice(data, size=len(data), replace=True)
         values.append(statistic(subsample, **kwargs))
 
     return np.quantile(values, [left_quant, right_quant])
