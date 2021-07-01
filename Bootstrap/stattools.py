@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import pandas as pd
 import scipy.stats as st
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 class Bootstrap:
     
-    def __init__(self, alpha=0.05, boot_samples=1000, statistic=np.mean,):
+    def __init__(self, alpha=0.05, boot_samples=1000, statistic=np.mean, random_state=42):
         self.bootstrap_samples = boot_samples
         self.statistic = statistic
+        self.random_state = random_state
         self.bootstrap_conf_level = 1 - alpha
         self.left_quant = (1 - self.bootstrap_conf_level) / 2
         self.right_quant = 1 - (1 - self.bootstrap_conf_level) / 2
@@ -22,20 +22,20 @@ bootstrap_samples: {self.bootstrap_samples}\n\
 statistic: {self.statistic}\n\
 confidence_level: {self.bootstrap_conf_level}\n\
 left_quant: {self.left_quant}\n\
-right_quant: {self.right_quant}'
+right_quant: {self.right_quant}\n\
+random_state: {self.random_state}'
         
     def fit(self, sample_a, sample_b):
+        np.random.seed(self.random_state)
         boot_len = max([len(sample_a), len(sample_b)])
         self.boot_data = []
-        
-        state = np.random.RandomState(42)
+    
         for i in tqdm(range(self.bootstrap_samples)): # извлечение подвыборок 
-            sub_a = sample_a.sample(boot_len, replace = True, random_state=state).to_numpy()
-            sub_b = sample_b.sample(boot_len, replace = True, random_state=state).to_numpy()
+            sub_a = np.random.choice(sample_a, size=boot_len, replace = True)
+            sub_b = np.random.choice(sample_b, size=boot_len, replace = True)
             self.boot_data.append(self.statistic(sub_a-sub_b)) 
-        
-        self.quants = (pd.DataFrame(self.boot_data).quantile([self.left_quant, self.right_quant])
-                      .reset_index().rename(index={0:'left', 1:'right'}, columns={'index':'quantiles', 0:'values'}))
+
+        self.quants = np.quantile(self.boot_data,[self.left_quant, self.right_quant])
     
     def compute(self):
         p_1 = st.norm.cdf(x = 0, loc = np.mean(self.boot_data), scale = np.std(self.boot_data))
@@ -46,13 +46,13 @@ right_quant: {self.right_quant}'
     def get_graph(self, title=None):
         _, _, bars = plt.hist(self.boot_data, bins = 50)
         for bar in bars:
-            if bar.get_x() <= self.quants['values'][0] or bar.get_x() >= self.quants['values'][1]:
-                bar.set_facecolor('red')
+            bar.set_edgecolor('white')
+            if bar.get_x() <= self.quants[0] or bar.get_x() >= self.quants[1]:
+                bar.set_facecolor('#EF553B')
             else: 
-                bar.set_facecolor('grey')
-                bar.set_edgecolor('black')
-        
-        plt.vlines(self.quants['values'],ymin=0,ymax=len(bars),linestyle='--')
+                bar.set_facecolor('#636EFA')
+
+        plt.vlines(self.quants,ymin=0,ymax=len(bars),linestyle='--')
         plt.xlabel('differences')
         plt.ylabel('frequency')
         plt.title(title)
@@ -71,7 +71,7 @@ def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,
     
 
 def correlation_ratio(categories, values):
-    cat = pd.factorize(categories)[0]
+    cat = np.unique(categories, return_inverse=True)[1]
     values = np.array(values)
     
     ssw = 0
