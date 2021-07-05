@@ -31,7 +31,7 @@ app.layout = html.Div(children=[
     [Input('trials', 'value'),
     Input('probas', 'value'),
     ])
-def update_figures(trials, probas):
+def update_figures(trials, prob):
 
 	def binominal(n, p):
 		n_range = np.array(range(n+1))
@@ -41,12 +41,12 @@ def update_figures(trials, probas):
 	description = ''
 
 	try:
-		trials_range, binom_pmf = binominal(trials,probas)
-		bar_chart = [(go.Bar(x=trials_range,y=binom_pmf, hoverinfo='text+x', text=list(map(lambda x: '{:.1%}'.format(x),data)), marker_color='#FFA15A',
+		trials_range, binom_pmf = binominal(trials,prob)
+		bar_chart = [(go.Bar(x=trials_range,y=binom_pmf, hoverinfo='text+x', text=list(map(lambda x: '{:.1%}'.format(x),binom_pmf)), marker_color='#FFA15A',
 			opacity=0.85))]
 
-		mx = round((trials*data).sum())
-		sigma = round((mx*(1-probas))**.5,3)
+		mx = round((trials_range*binom_pmf).sum())
+		sigma = round((mx*(1-prob))**.5,3)
 	
 		description = 'Mean ± Std: {} ± {}'.format(mx, sigma)
 	except:	
