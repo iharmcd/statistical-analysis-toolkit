@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from scipy.special import binom
+import scipy.stats as st
 import plotly.graph_objects as go
 import dash
 import dash_core_components as dcc
@@ -34,15 +34,15 @@ app.layout = html.Div(children=[
 def update_figures(trials, probas):
 
 	def binominal(n, p):
-		distribution = np.array([binom(n, k) * p**k * (1-p)**(n-k) for k in range(0, n+1)])
-		return distribution
+		n_range = np.array(range(n+1))
+		return n_range, st.binom.pmf(n_range, n, p)
 
 	bar_chart = []	
 	description = ''
 
 	try:
-		data, trials = binominal(trials,probas), np.array(range(trials+1))
-		bar_chart = [(go.Bar(x=trials,y=data, hoverinfo='text+x', text=list(map(lambda x: '{:.1%}'.format(x),data)), marker_color='#FFA15A',
+		trials_range, binom_pmf = binominal(trials,probas)
+		bar_chart = [(go.Bar(x=trials_range,y=binom_pmf, hoverinfo='text+x', text=list(map(lambda x: '{:.1%}'.format(x),data)), marker_color='#FFA15A',
 			opacity=0.85))]
 
 		mx = round((trials*data).sum())
@@ -59,7 +59,7 @@ def update_figures(trials, probas):
 	)
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(host='0.0.0.0')
 
 
 
