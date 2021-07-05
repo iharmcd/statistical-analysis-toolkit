@@ -45,10 +45,9 @@ def update_figures(trials, prob):
 		bar_chart = [(go.Bar(x=trials_range,y=binom_pmf, hoverinfo='text+x', text=list(map(lambda x: '{:.1%}'.format(x),binom_pmf)), marker_color='#FFA15A',
 			opacity=0.85))]
 
-		mx = round((trials_range*binom_pmf).sum())
-		sigma = round((mx*(1-prob))**.5,3)
+		mx, var, _, _ = st.binom.stats(trials, prob, moments='mvsk')
 	
-		description = 'Mean ± Std: {} ± {}'.format(mx, sigma)
+		description = 'Mean ± Std: {:.0f} ± {:.3f}'.format(mx, var**.5)
 	except:	
 		pass
 
