@@ -30,7 +30,7 @@ random_state: {self.random_state}'
         boot_len = max([len(sample_a), len(sample_b)])
         self.boot_data = []
     
-        for i in tqdm(range(self.bootstrap_samples)): # извлечение подвыборок 
+        for i in tqdm(range(self.bootstrap_samples)): 
             sub_a = np.random.choice(sample_a, size=boot_len, replace = True)
             sub_b = np.random.choice(sample_b, size=boot_len, replace = True)
             self.boot_data.append(self.statistic(sub_a-sub_b)) 
@@ -84,3 +84,15 @@ def correlation_ratio(categories, values):
     return (ssb / (ssb + ssw))**.5
 
 
+def cramers_v(rc_table, correction=False):
+    
+    '''Calculating cramers_v correlation for categorical data. 
+       correction=True - Yates' correction
+       p_value = chi2_stats[1]
+       chi_square_statistic = chi2_stats[0] '''
+    
+    rc_table = np.array(rc_table)
+    n = rc_table.sum()
+    chi2_stats = st.chi2_contingency(rc_table, correction=correction)
+    cramers_v = (chi2_stats[0]/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
+    return cramers_v, chi2_stats[1], chi2_stats[0]
