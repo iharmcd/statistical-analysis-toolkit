@@ -101,7 +101,7 @@ def cramers_v(rc_table, correction=False):
 def robust_mean(data, trunc_level=.2, type_='truncated'):
     data = np.array(data)
     q = np.quantile(data, q=[trunc_level / 2, 1 - trunc_level / 2])
-    trunc_data = np.where((data >= q[0]) & (data <= q[1]))[0]
+    trunc_data = data[(data > q[0]) & (data < q[1])]
     if type_ == 'truncated':
         return trunc_data.mean()
     elif type_ == 'winsorized':
