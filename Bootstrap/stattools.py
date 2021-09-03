@@ -97,6 +97,8 @@ def cramers_v(rc_table):
        https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V
        correction: True - Yates' correction'''
     
+    rc_table = np.array(rc_table)
+    
     if rc_table.min() < 5:
         return 'not enough observations'
     else:
@@ -104,8 +106,7 @@ def cramers_v(rc_table):
             correction = True
         else:
             correction = False
- 
-        rc_table = np.array(rc_table)
+            
         n = rc_table.sum()
         chi2_stats = st.chi2_contingency(rc_table, correction=correction)
         chi_square, p_value = chi2_stats[:2]
