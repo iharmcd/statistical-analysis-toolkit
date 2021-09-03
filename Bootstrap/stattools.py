@@ -108,8 +108,8 @@ def cramers_v(rc_table):
         rc_table = np.array(rc_table)
         n = rc_table.sum()
         chi2_stats = st.chi2_contingency(rc_table, correction=correction)
-        cramers_v = (chi2_stats[0]/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
         chi_square, p_value = chi2_stats[:2]
+        cramers_v = (chi_square/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
         return cramers_v, p_value, chi_square
 
 
