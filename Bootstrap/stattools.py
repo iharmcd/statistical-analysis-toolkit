@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 
 class Bootstrap:
     
+    '''https://en.wikipedia.org/wiki/Bootstrapping_(statistics)'''
+
     def __init__(self, alpha=0.05, boot_samples=1000, statistic=np.mean, random_state=42):
         self.bootstrap_samples = boot_samples
         self.statistic = statistic
@@ -71,6 +73,11 @@ def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,
     
 
 def correlation_ratio(categories, values):
+    
+    '''https://en.wikipedia.org/wiki/Correlation_ratio
+       ssw: sum of squares within groups
+       ssb: sum of squares between groups'''
+    
     cat = np.unique(categories, return_inverse=True)[1]
     values = np.array(values)
     
@@ -84,21 +91,33 @@ def correlation_ratio(categories, values):
     return (ssb / (ssb + ssw))**.5
 
 
-def cramers_v(rc_table, correction=False):
+def cramers_v(rc_table):
     
     '''Calculating cramers_v correlation for categorical data. 
-       correction=True - Yates' correction
-       p_value = chi2_stats[1]
-       chi_square_statistic = chi2_stats[0] '''
+       https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V
+       correction: True - Yates' correction'''
     
-    rc_table = np.array(rc_table)
-    n = rc_table.sum()
-    chi2_stats = st.chi2_contingency(rc_table, correction=correction)
-    cramers_v = (chi2_stats[0]/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
-    return cramers_v, chi2_stats[1], chi2_stats[0]
+    if rc_table.min() < 5:
+        return 'not enough observations'
+    else:
+        if rc_table.min() < 10:
+            correction = True
+        else:
+            correction = False
+ 
+        rc_table = np.array(rc_table)
+        n = rc_table.sum()
+        chi2_stats = st.chi2_contingency(rc_table, correction=correction)
+        cramers_v = (chi2_stats[0]/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
+        chi_square, p_value = chi2_stats[:2]
+        return cramers_v, p_value, chi_square
 
 
 def robust_mean(data, trunc_level=.2, type_='truncated'):
+    
+    '''https://en.wikipedia.org/wiki/Truncated_mean
+       https://en.wikipedia.org/wiki/Winsorized_mean'''
+    
     data = np.array(data)
     q = np.quantile(data, q=[trunc_level / 2, 1 - trunc_level / 2])
     trunc_data = data[(data > q[0]) & (data < q[1])]
