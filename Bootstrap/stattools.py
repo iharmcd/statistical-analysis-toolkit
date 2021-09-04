@@ -99,7 +99,7 @@ def cramers_v(rc_table):
     
     rc_table = np.array(rc_table)
     
-    if rc_table.min() <= 5:
+    if rc_table.min() < 5:
         return 'not enough observations'
     else:
         if rc_table.min() < 10:
