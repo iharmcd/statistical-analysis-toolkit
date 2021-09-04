@@ -15,7 +15,7 @@ def mosaic_chart(rc_table, title=None, residuals=False):
         if residuals:
             marker = dict(cmin=-4, cmax=4, color=standartized_residuals.loc[i], colorbar={'title': ''},
                           colorscale='RdBu')
-            customdata = [i] * len(heights.index)
+            customdata = [i] * max(rc_table.shape)
             texttemplate = "%{customdata}: %{text}"
             showlegend = False
         else:
@@ -34,10 +34,10 @@ def mosaic_chart(rc_table, title=None, residuals=False):
                          )]
 
     fig = go.Figure(chart)
-    fig.update_layout(template='simple_white', barmode="stack", yaxis={'range': [0, 100]},
+    fig.update_layout(template='simple_white', barmode="stack", uniformtext={'mode': "hide", 'minsize': 12},
+                      yaxis={'range': [0, 100], 'title':'percentage (%)'},
                       xaxis={'range': [0, 100], 'tickvals': np.cumsum(widths) - widths / 2,
-                             'ticktext': ["%s<br>%d" % (l, w) for l, w in zip(labels, rc_table.sum(axis=0).tolist())]},
-                      uniformtext={'mode': "hide", 'minsize': 12},
+                        'ticktext': ["%s<br>%d" % (l, w) for l, w in zip(labels, rc_table.sum(axis=0).tolist())]},
                       title={'text': title, 'x': .5}, showlegend=showlegend,
                       legend_title_text=rc_table.index.name)
     fig.show()
