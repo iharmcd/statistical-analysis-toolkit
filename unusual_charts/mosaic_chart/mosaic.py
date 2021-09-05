@@ -15,7 +15,7 @@ def mosaic_chart(rc_table, title=None, residuals=False):
         if residuals:
             marker = dict(cmin=-4, cmax=4, color=standartized_residuals.loc[i], colorbar={'title': ''},
                           colorscale='RdBu')
-            customdata = [i] * max(rc_table.shape)
+            customdata = [i] * len(labels)
             texttemplate = "%{customdata}: %{text}"
             showlegend = False
         else:
