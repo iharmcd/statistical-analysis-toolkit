@@ -5,6 +5,7 @@ import numpy as np
 import scipy.stats as st
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from collections import namedtuple
 
 class Bootstrap:
     
@@ -109,9 +110,9 @@ def cramers_v(rc_table):
             
         n = rc_table.sum()
         chi2_stats = st.chi2_contingency(rc_table, correction=correction)
-        chi_square, p_value = chi2_stats[:2]
-        cramers_v = (chi_square/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
-        return cramers_v, p_value, chi_square
+        cramers_v = (chi2_stats[0]/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
+        stat = namedtuple('CramersvResult', ('corr', 'pvalue','chi2'))
+        return stat(cramers_v, chi2_stats[1], chi2_stats[0])
 
 
 def robust_mean(data, trunc_level=.2, type_='truncated'):
