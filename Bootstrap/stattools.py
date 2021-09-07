@@ -80,16 +80,23 @@ def correlation_ratio(categories, values):
        ssb: sum of squares between groups'''
     
     cat = np.unique(categories, return_inverse=True)[1]
+    uniq_cat = np.unique(cat)
     values = np.array(values)
+    deg_w = values.shape[0] - len(uniq_cat)
+    deg_b = len(uniq_cat) - 1
     
     ssw = 0
     ssb = 0
-    for i in np.unique(cat):
+    for i in uniq_cat:
         subgroup = values[np.argwhere(cat == i).flatten()]
         ssw += np.sum((subgroup-np.mean(subgroup))**2)
         ssb += len(subgroup)*(np.mean(subgroup)-np.mean(values))**2
-
-    return (ssb / (ssb + ssw))**.5
+    
+    eta = (ssb / (ssb + ssw))**.5
+    F = (ssb/deg_b)/(ssw/deg_w)
+    pvalue = 1 - st.f.cdf(F, deg_b, deg_w)
+    stat = namedtuple('PearsonEtaResult',('corr','pvalue','statistic'))    
+    return stat(eta,pvalue,F)
 
 
 def cramers_v(rc_table):
