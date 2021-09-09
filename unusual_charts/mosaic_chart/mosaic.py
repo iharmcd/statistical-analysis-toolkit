@@ -9,7 +9,7 @@ def mosaic_chart(rc_table, title=None, residuals=False):
     widths = rc_table.sum(axis=0) / rc_table.sum().sum() * 100
     expected = st.chi2_contingency(rc_table)[3]
     standartized_residuals = ((rc_table - expected) / expected ** .5)
-    percentage_error = (heights.T - ((rc_table.sum(axis=1) / rc_table.sum().sum()) * 100)).T
+    percentage_error = heights - expected / expected.sum(axis=0) * 100
     
     chart = []
     for i in heights.index:
