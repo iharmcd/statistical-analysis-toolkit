@@ -10,7 +10,7 @@ def mosaic_chart(rc_table, title=None, residuals=None):
     expected = st.chi2_contingency(rc_table)[3]
     standartized_residuals = ((rc_table - expected) / expected ** .5)
     percentage_error = heights - expected / expected.sum(axis=0)
-    error_info = ''
+    
     chart = []
     for i in heights.index:
         if residuals == 'standardized':
@@ -35,6 +35,7 @@ def mosaic_chart(rc_table, title=None, residuals=None):
             customdata = None
             texttemplate = None
             showlegend = True
+            error_info = ''
         
         else:
             raise ValueError(f"Invalid property name.\
