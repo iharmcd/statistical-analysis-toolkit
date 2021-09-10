@@ -16,16 +16,18 @@ def mosaic_chart(rc_table, title=None, residuals=None):
         if residuals == 'standardized':
             marker = dict(cmin=-4, cmax=4, color=standartized_residuals.loc[i], colorscale='RdBu',
                           colorbar={'title': ''})
-            customdata = [i] * len(labels)
-            texttemplate = "%{customdata}: %{text:,}"
+            customdata = standartized_residuals.loc[i]
+            texttemplate = ': '.join([f'{i}',"%{text:,}"])
+            error_info = 'standardized_error: %{customdata:.1f}'
             showlegend = False
             
         elif residuals == 'percentage':
             marker = dict(cmin=-100, cmax=100, color=percentage_error.loc[i]*100, colorscale='edge_r',
                           colorbar={'ticktext':list(range(-100,101,20)), 
                                     'tickvals':list(range(-100,101,20)), 'title': ''})
-            customdata = [i] * len(labels)
-            texttemplate = "%{customdata}: %{text:,}"
+            customdata = percentage_error.loc[i]
+            texttemplate = ': '.join([f'{i}',"%{text:,}"])
+            error_info = 'percentage_error: %{customdata:.1%}'
             showlegend = False
             
         elif residuals is None:
@@ -44,7 +46,8 @@ def mosaic_chart(rc_table, title=None, residuals=None):
                          customdata=customdata, texttemplate=texttemplate,
                          hovertemplate="<br>".join(['height: %{y:.1f}%',
                                                     'width: %{width:.1f}%',
-                                                    'value: %{text:,}'])
+                                                    'value: %{text:,}',
+                                                     error_info])
                          )]
 
     fig = go.Figure(chart)
