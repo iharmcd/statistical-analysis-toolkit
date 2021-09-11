@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import scipy.stats as st
 import numpy as np
 
-def mosaic_chart(rc_table, title=None, residuals=None):
+def mosaic_plot(rc_table, title=None, residuals=None):
     labels = rc_table.columns
     heights = rc_table / rc_table.sum() 
     widths = rc_table.sum(axis=0) / rc_table.sum().sum()
