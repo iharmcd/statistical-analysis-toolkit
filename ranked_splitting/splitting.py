@@ -38,7 +38,7 @@ output_split_size: {self.split_size}'
         self.ranked_dataset = self.ranked_dataset[~self.ranked_dataset['rank'].isin(filter_)]
         biggest_part, test = train_test_split(self.ranked_dataset, random_state=self.random_state, 
                                           test_size=self.split_size, shuffle=True, stratify=self.ranked_dataset['rank'])
-        expected_ratio = self.split_size/(biggest_part.shape[0]/(biggest_part.shape[0] + test.shape[0]))
+        expected_ratio = self.split_size / (1 - self.split_size)
         _, control = train_test_split(biggest_part, random_state=self.random_state, test_size=expected_ratio, 
                                       shuffle=True, stratify=biggest_part['rank'])
         return test, control
