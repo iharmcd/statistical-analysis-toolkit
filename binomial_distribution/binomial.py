@@ -16,9 +16,9 @@ app.layout = html.Div(children=[
 
 		html.Center(html.H2(children = 'Responce Estimation with Binomial Distribution')),
 		html.Hr(),
-		html.Div(["Input number of messages: ", dcc.Input(id='trials', type='number', step=1, max=1001, min=0)]),
+		html.Div(["Input number of messages: ", dcc.Input(id='trials', type='number', step=1, max=1001, min=0, value=10)]),
 		html.Br(),
-		html.Div(["Expected conversion rate: ", dcc.Input(id='probas',type='number', step=0.01, min=0, max=1)]),
+		html.Div(["Expected conversion rate: ", dcc.Input(id='probas',type='number', step=0.01, min=0, max=1, value=0.5)]),
 		html.Hr(),
 		html.Div([dcc.Graph( id = 'binomial_chart')], className='twelve columns'),
 		html.H6(html.Div(id='output-info', style={'width': '95%','float':'right'})),
