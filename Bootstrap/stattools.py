@@ -127,3 +127,13 @@ def robust_mean(data, trunc_level=.2, type_='truncated'):
         return trunc_data.mean()
     elif type_ == 'winsorized':
         return np.clip(data, trunc_data.min(), trunc_data.max()).mean()
+
+
+def events_sum(probas: list) -> float:
+    if probas[0] < 0 or probas[0] > 1:
+        raise ValueError("probability can't take negative values or values greater than one")
+    if len(probas) == 1:
+        return probas[0]
+    else:
+        second_element = events_sum(probas[1:])
+        return probas[0] + second_element - (probas[0] * second_element)
