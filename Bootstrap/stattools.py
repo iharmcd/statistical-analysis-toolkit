@@ -5,6 +5,7 @@ import numpy as np
 import scipy.stats as st
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import seaborn as sns
 from collections import namedtuple
 
 class Bootstrap:
@@ -18,16 +19,7 @@ class Bootstrap:
         self.bootstrap_conf_level = 1 - alpha
         self.left_quant = (1 - self.bootstrap_conf_level) / 2
         self.right_quant = 1 - (1 - self.bootstrap_conf_level) / 2
-        
-    def __str__(self):
-        return f'{type(self)}\n\
-bootstrap_samples: {self.bootstrap_samples}\n\
-statistic: {self.statistic}\n\
-confidence_level: {self.bootstrap_conf_level}\n\
-left_quant: {self.left_quant}\n\
-right_quant: {self.right_quant}\n\
-random_state: {self.random_state}'
-        
+                
     def fit(self, sample_a, sample_b):
         np.random.seed(self.random_state)
         boot_len = max([len(sample_a), len(sample_b)])
@@ -137,3 +129,74 @@ def events_sum(probas: list) -> float:
     else:
         second_element = events_sum(probas[1:])
         return probas[0] + second_element - (probas[0] * second_element)
+
+class Power:
+    def __init__(self, alpha=0.05, power=0.8, stat_test=st.ttest_ind, bootsize=1000, random_state=None, **kwargs):
+        self._bootsize = bootsize
+        self._random_state=random_state
+        self._alpha = alpha
+        self._power = power
+        self._stat_test = stat_test
+        self._kwargs = kwargs
+        
+    def fit(self, *samples, lift=None, min_sample_size=None):
+        if not samples or len(samples) > 2:
+            raise ValueError('use one or two samples')
+        else:
+            self._samples = [np.array(i) for i in samples]
+        if not lift:
+            lift = 1
+        if len(self._samples) == 1:
+            self._control = self._samples[0]
+            self._test = self._control * lift
+        else:
+            self._control, self._test = self._samples
+        if not min_sample_size:
+            min_sample_size = max(len(self._control), len(self._test))
+                
+        p_values = []
+        means = []
+        np.random.seed(self._random_state)
+        for i in range(self._bootsize):
+                sample_1 = np.random.choice(self._control, size=min_sample_size, replace=True)
+                sample_2 = np.random.choice(self._test, size=min_sample_size, replace=True)
+                p_values.append(self._stat_test(sample_1, sample_2, **self._kwargs)[1])
+                means.append([np.mean(sample_1), np.mean(sample_2)])
+        self._p_values = np.array(p_values)
+        self._means = np.array(means)
+        
+    def compute_power(self):
+        return (self._p_values <= self._alpha).sum() / self._bootsize
+    
+    def get_charts(self, figsize=(18,6), bins=10, alpha=0.7):
+        plt.figure(figsize=figsize)
+        plt.subplot(1,3,1)
+        sns.histplot(self._control, bins=bins, label=f'sample_1')
+        sns.histplot(self._test, bins=bins, label=f'sample_2', color='C1', alpha=alpha)
+        plt.title('Distribution of Samples')
+        plt.legend()
+        plt.subplot(1,3,2)
+        sns.histplot(self._means[:,0], bins=bins, label=f'sample_1')
+        sns.histplot(self._means[:,1], bins=bins, label=f'sample_2', color='C1', alpha=alpha)
+        plt.title('Bootstrap Means Distribution')
+        plt.legend()
+        plt.subplot(1,3,3)
+        p_val_bins = 100 if self._alpha < 0.01 else int(1/self._alpha)
+        sns.histplot(self._p_values, color='C3', stat='probability', bins=p_val_bins)
+        plt.axvline(self._alpha, color='black', linewidth=2, label=f'alpha={self._alpha}', ls='--')
+        hist = np.histogram(self._p_values, bins=p_val_bins)
+        if (hist[0] / hist[0].sum()).max() >= self._power: 
+            plt.axhline(0.8, color='blue', linewidth=2, label=f'power_threshold={self._power}', ls='--')
+        plt.legend()
+        plt.title('P-values Distribution')
+        plt.show()
+        
+
+def cohens_d(control,test):
+    """https://en.wikipedia.org/wiki/Effect_size"""
+    
+    n_control, n_test = len(control), len(test)
+    diff = np.mean(test) - np.mean(control)
+    df = n_control + n_test - 2
+    sd_pooled = (((n_control-1) * np.std(control) ** 2 + (n_test-1)*np.std(test, ddof=1) ** 2) / df)**.5
+    return diff / sd_pooled
