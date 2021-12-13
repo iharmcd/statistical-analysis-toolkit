@@ -130,12 +130,13 @@ def events_sum(probas: list) -> float:
         second_element = events_sum(probas[1:])
         return probas[0] + second_element - (probas[0] * second_element)
 
-class Power:
-    def __init__(self, alpha=0.05, power=0.8, stat_test=st.ttest_ind, bootsize=1000, random_state=None, **kwargs):
+class PowerAnalysis:
+    def __init__(self, alpha=0.05, power_thresh=0.8, stat_test=st.ttest_ind, bootsize=1000, 
+                 random_state=None, **kwargs):
         self._bootsize = bootsize
         self._random_state=random_state
         self._alpha = alpha
-        self._power = power
+        self._power = power_thresh
         self._stat_test = stat_test
         self._kwargs = kwargs
         
@@ -160,13 +161,15 @@ class Power:
         for i in range(self._bootsize):
                 sample_1 = np.random.choice(self._control, size=min_sample_size, replace=True)
                 sample_2 = np.random.choice(self._test, size=min_sample_size, replace=True)
-                p_values.append(self._stat_test(sample_1, sample_2, **self._kwargs)[1])
+                stat_result = self._stat_test(sample_1, sample_2, **self._kwargs)
+                p_values.append(stat_result[1] if isinstance(stat_result, (tuple,set,list)) else stat_result)
                 means.append([np.mean(sample_1), np.mean(sample_2)])
         self._p_values = np.array(p_values)
         self._means = np.array(means)
         
-    def compute_power(self):
-        return (self._p_values <= self._alpha).sum() / self._bootsize
+    def compute_fpr(self, weighted=False):
+        fpr = (self._p_values <= self._alpha).sum() / self._bootsize
+        return fpr * max(self._p_values) if weighted else fpr
     
     def get_charts(self, figsize=(18,6), bins=10, alpha=0.7):
         plt.figure(figsize=figsize)
@@ -181,7 +184,7 @@ class Power:
         plt.title('Bootstrap Means Distribution')
         plt.legend()
         plt.subplot(1,3,3)
-        p_val_bins = 100 if self._alpha < 0.01 else int(1/self._alpha)
+        p_val_bins = 100 if self._alpha <= 0.01 else int(1/self._alpha)
         sns.histplot(self._p_values, color='C3', stat='probability', bins=p_val_bins)
         plt.axvline(self._alpha, color='black', linewidth=2, label=f'alpha={self._alpha}', ls='--')
         hist = np.histogram(self._p_values, bins=p_val_bins)
@@ -190,6 +193,14 @@ class Power:
         plt.legend()
         plt.title('P-values Distribution')
         plt.show()
+        
+    def perform_chisquare(self, bins=None):
+        if not bins:
+            len_ = len(np.arange(0, max(self._p_values), self._alpha))
+            self.bins = 20 if len_ > 20 else len_
+        else:
+            self.bins = bins
+        return st.chisquare(np.histogram(self._p_values, bins=self.bins)[0])
         
 
 def cohens_d(control,test):
