@@ -208,7 +208,10 @@ def cohens_d(control,test):
     """https://en.wikipedia.org/wiki/Effect_size"""
     
     n_control, n_test = len(control), len(test)
-    diff = np.mean(test) - np.mean(control)
+    lift = np.mean(test) - np.mean(control)
     df = n_control + n_test - 2
     sd_pooled = (((n_control-1) * np.std(control) ** 2 + (n_test-1) * np.std(test) ** 2) / df)**.5
-    return diff / sd_pooled
+    return lift / sd_pooled
+
+def lift(before, after):
+    return (after - before) / before
