@@ -12,58 +12,70 @@ class Bootstrap:
     
     '''https://en.wikipedia.org/wiki/Bootstrapping_(statistics)'''
 
-    def __init__(self, alpha=0.05, boot_samples=1000, statistic=np.mean, random_state=42):
-        self.bootstrap_samples = boot_samples
-        self.statistic = statistic
-        self.random_state = random_state
+    def __init__(self, statistic=np.mean, alpha=0.05, bootsize=10000, random_state=None, **kwargs):
+        self._bootstrap_samples = bootsize
+        self._statistic = statistic
+        self._random_state = random_state
         self.bootstrap_conf_level = 1 - alpha
         self.left_quant = (1 - self.bootstrap_conf_level) / 2
         self.right_quant = 1 - (1 - self.bootstrap_conf_level) / 2
+        self._kwargs = kwargs
                 
     def fit(self, sample_a, sample_b):
-        np.random.seed(self.random_state)
-        boot_len = max([len(sample_a), len(sample_b)])
-        self.boot_data = []
+        np.random.seed(self._random_state)
+        max_len = max([len(sample_a), len(sample_b)])
+        self._boot_data = []
     
-        for i in tqdm(range(self.bootstrap_samples)): 
-            sub_a = np.random.choice(sample_a, size=boot_len, replace = True)
-            sub_b = np.random.choice(sample_b, size=boot_len, replace = True)
-            self.boot_data.append(self.statistic(sub_a-sub_b)) 
-
-        self.quants = np.quantile(self.boot_data,[self.left_quant, self.right_quant])
+        for i in range(self._bootstrap_samples): 
+            sub_a = np.random.choice(sample_a, size=max_len, replace = True)
+            sub_b = np.random.choice(sample_b, size=max_len, replace = True)
+            self._boot_data.append(self._statistic(sub_a,**self._kwargs)-self._statistic(sub_b,**self._kwargs)) 
+        self.quants = np.quantile(self._boot_data, [self.left_quant, self.right_quant])
     
     def compute(self):
-        p_1 = st.norm.cdf(x = 0, loc = np.mean(self.boot_data), scale = np.std(self.boot_data))
-        p_2 = st.norm.cdf(x = 0, loc = -np.mean(self.boot_data), scale = np.std(self.boot_data))
-        p_value = min(p_1, p_2) * 2
+        cdf_p = st.norm.cdf(x = 0, loc = np.mean(self._boot_data), scale = np.std(self._boot_data))
+        p_value = min(2*cdf_p , 2-2*cdf_p)
         return p_value
     
-    def get_graph(self, title=None):
-        _, _, bars = plt.hist(self.boot_data, bins = 50)
-        for bar in bars:
-            bar.set_edgecolor('white')
-            if bar.get_x() <= self.quants[0] or bar.get_x() >= self.quants[1]:
-                bar.set_facecolor('#EF553B')
-            else: 
-                bar.set_facecolor('#636EFA')
+    def get_ci(self):
+        stat = namedtuple('ConfidenceInterval', ('level', 'low','high'))
+        return stat(self.bootstrap_conf_level, self.quants[0].round(4),self.quants[1].round(4))
+    
+    def get_chart(self, figsize=(7,6), bins=50, stat='count'):
+        plt.figure(figsize=figsize)
+        bar = sns.histplot(self._boot_data, bins=bins, stat=stat, color='#636EFA')
+        counts = []
+        for i in bar.patches:
+            counts.append(i.get_height())
+            if i.get_x() <= self.quants[0] or i.get_x() >= self.quants[1]:
+                i.set_facecolor('#EF553B')
+        plt.vlines(self.quants,ymin=0,ymax=max(counts),linestyle='--', 
+                   label=f'{self.bootstrap_conf_level} confidence interval')
+        plt.legend()
+        plt.title(f'Distribution of {self._statistic.__name__} differences')
 
-        plt.vlines(self.quants,ymin=0,ymax=len(bars),linestyle='--')
-        plt.xlabel('differences')
-        plt.ylabel('frequency')
-        plt.title(title)
 
-
-def confidence_interval(data, conf_level=0.95,boot_samples=1000,random_state=42,statistic=np.mean,**kwargs):
+def confidence_interval(data, conf_level=0.95, bootsize=10000, random_state=None, statistic=np.mean, **kwargs):
     np.random.seed(random_state)
     left_quant, right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
     
     values = []
-    for i in (range(boot_samples)):
+    for i in range(bootsize):
         subsample = np.random.choice(data, size=len(data), replace=True)
         values.append(statistic(subsample, **kwargs))
+    stat = namedtuple('ConfidenceInterval', ('level', 'low','high'))
+    return stat(conf_level, *np.quantile(values, [left_quant, right_quant]))
 
-    return np.quantile(values, [left_quant, right_quant])
-    
+   
+def ttest_ci(sample_a, sample_b, confidence_level=0.95):
+    t_alpha = abs(st.norm(0,1).ppf((1-confidence_level)/2))
+    mean_a,mean_b = np.mean(sample_a), np.mean(sample_b)
+    var_a,var_b = np.var((sample_a), ddof=1),np.var((sample_b), ddof=1)
+    se = ((var_a)/len(sample_a) + (var_b)/len(sample_b))**.5
+    low, high = ((mean_a-mean_b) - t_alpha*se).round(4), ((mean_a-mean_b) + t_alpha*se).round(4)
+    stat = namedtuple('ConfidenceInterval', ('level', 'low','high', 'se'))
+    return stat(confidence_level, low, high)
+
 
 def correlation_ratio(categories, values):
     
