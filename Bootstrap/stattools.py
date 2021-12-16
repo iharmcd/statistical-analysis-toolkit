@@ -79,8 +79,7 @@ def efron_tibshirani(sample_1, sample_2, bootsize=10000, random_state=None):
     t_values = np.array(t_values)
     
     p_ = (t_values >= true_t).sum() / bootsize
-    stat = namedtuple('BootstrapResult', ('statistic','pvalue'))
-    return stat(true_t, min(2*p_, 2-2*p_))
+    return min(2*p_, 2-2*p_)
 
 
 def confidence_interval(data, conf_level=0.95, bootsize=10000, random_state=None, statistic=np.mean, **kwargs):
