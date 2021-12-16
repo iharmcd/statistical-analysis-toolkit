@@ -53,6 +53,34 @@ class Bootstrap:
                    label=f'{self.bootstrap_conf_level} confidence interval')
         plt.legend()
         plt.title(f'Distribution of {self._statistic.__name__} differences')
+        
+
+def efron_tibshirani(sample_1, sample_2, bootsize=10000, random_state=None):
+    
+    "https://en.wikipedia.org/wiki/Bootstrapping_(statistics)#Bootstrap_hypothesis_testing"
+    
+    def t_stat(sample_1, sample_2):
+        lift = sample_1.mean() - sample_2.mean()
+        return lift / (np.var(sample_1)/len(sample_1) + np.var(sample_2)/len(sample_2)) ** .5
+    true_t = t_stat(sample_1, sample_2)
+    combined_mean = ((sample_1.mean() * len(sample_1) + sample_2.mean() * len(sample_2)) / 
+                                                        (len(sample_2) + len(sample_1)))
+    bias_sample_1 = sample_1 - sample_1.mean() + combined_mean
+    bias_sample_2 = sample_2 - sample_2.mean() + combined_mean
+    
+    max_len = max([len(sample_1), len(sample_2)])
+    
+    np.random.seed(random_state)
+    t_values = []
+    for i in range(bootsize):
+        sub_a=np.random.choice(bias_sample_1, size=max_len, replace=True)
+        sub_b=np.random.choice(bias_sample_2, size=max_len, replace=True)
+        t_values.append(t_stat(sub_a,sub_b))
+    t_values = np.array(t_values)
+    
+    p_ = (t_values >= true_t).sum() / bootsize
+    stat = namedtuple('BootstrapResult', ('statistic','pvalue'))
+    return stat(true_t, min(2*p_, 2-2*p_))
 
 
 def confidence_interval(data, conf_level=0.95, bootsize=10000, random_state=None, statistic=np.mean, **kwargs):
@@ -73,7 +101,7 @@ def ttest_ci(sample_a, sample_b, confidence_level=0.95):
     var_a,var_b = np.var((sample_a), ddof=1),np.var((sample_b), ddof=1)
     se = ((var_a)/len(sample_a) + (var_b)/len(sample_b))**.5
     low, high = ((mean_a-mean_b) - t_alpha*se).round(4), ((mean_a-mean_b) + t_alpha*se).round(4)
-    stat = namedtuple('ConfidenceInterval', ('level', 'low','high', 'se'))
+    stat = namedtuple('ConfidenceInterval', ('level', 'low','high'))
     return stat(confidence_level, low, high)
 
 
