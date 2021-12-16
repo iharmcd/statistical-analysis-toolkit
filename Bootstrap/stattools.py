@@ -55,30 +55,46 @@ class Bootstrap:
         plt.title(f'Distribution of {self._statistic.__name__} differences')
         
 
-def efron_tibshirani(sample_1, sample_2, bootsize=10000, random_state=None):
+def efron_tibshirani(sample_a, sample_b, bootsize=10000, random_state=None):
     
     "https://en.wikipedia.org/wiki/Bootstrapping_(statistics)#Bootstrap_hypothesis_testing"
+    sample_a, sample_b = np.array(sample_a), np.array(sample_b)
+    def t_stat(sample_a, sample_b):
+        lift = sample_a.mean() - sample_b.mean()
+        return lift / (np.var(sample_a)/len(sample_a) + np.var(sample_b)/len(sample_b)) ** .5
+    true_t = t_stat(sample_a, sample_b)
+    combined_mean = ((sample_a.mean() * len(sample_a) + sample_b.mean() * len(sample_b)) / 
+                                                        (len(sample_b) + len(sample_a)))
+    bias_sample_a = sample_a - sample_a.mean() + combined_mean
+    bias_sample_b = sample_b - sample_b.mean() + combined_mean
     
-    def t_stat(sample_1, sample_2):
-        lift = sample_1.mean() - sample_2.mean()
-        return lift / (np.var(sample_1)/len(sample_1) + np.var(sample_2)/len(sample_2)) ** .5
-    true_t = t_stat(sample_1, sample_2)
-    combined_mean = ((sample_1.mean() * len(sample_1) + sample_2.mean() * len(sample_2)) / 
-                                                        (len(sample_2) + len(sample_1)))
-    bias_sample_1 = sample_1 - sample_1.mean() + combined_mean
-    bias_sample_2 = sample_2 - sample_2.mean() + combined_mean
-    
-    max_len = max([len(sample_1), len(sample_2)])
+    max_len = max([len(sample_a), len(sample_b)])
     
     np.random.seed(random_state)
     t_values = []
     for i in range(bootsize):
-        sub_a=np.random.choice(bias_sample_1, size=max_len, replace=True)
-        sub_b=np.random.choice(bias_sample_2, size=max_len, replace=True)
+        sub_a=np.random.choice(bias_sample_a, size=max_len, replace=True)
+        sub_b=np.random.choice(bias_sample_b, size=max_len, replace=True)
         t_values.append(t_stat(sub_a,sub_b))
     t_values = np.array(t_values)
     
     p_ = (t_values >= true_t).sum() / bootsize
+    return min(2*p_, 2-2*p_)
+
+
+def ratio_bootstrap(sample_a, sample_b, statistic=np.mean, bootsize=10000, random_state=None, **kwargs):
+    ab_diff = statistic(sample_a, **kwargs) - statistic(sample_b, **kwargs)
+    
+    np.random.seed(random_state)
+    count=0
+    for _ in range(bootsize):
+        stack = np.random.choice(np.hstack([sample_a,sample_b]), size=len(sample_a) + len(sample_b), replace=True)
+        sub_a = stack[:len(sample_a)]
+        sub_b = stack[len(sample_b):]
+        boot_diff = statistic(sub_a, **kwargs) - statistic(sub_b, **kwargs)
+        if boot_diff >= ab_diff:
+            count += 1
+    p_ = count / bootsize
     return min(2*p_, 2-2*p_)
 
 
