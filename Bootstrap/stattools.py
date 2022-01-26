@@ -98,7 +98,7 @@ def ratio_bootstrap(sample_a, sample_b, statistic=np.mean, bootsize=10000, rando
     return min(2*p_, 2-2*p_)
 
 
-def confidence_interval(data, conf_level=0.95, bootsize=10000, random_state=None, statistic=np.mean, **kwargs):
+def percentile_ci(data, conf_level=0.95, bootsize=10000, random_state=None, statistic=np.mean, **kwargs):
     np.random.seed(random_state)
     left_quant, right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
     
