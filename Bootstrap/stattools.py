@@ -217,7 +217,7 @@ class PowerAnalysis:
                 sample_1 = np.random.choice(self._control, size=min_sample_size, replace=True)
                 sample_2 = np.random.choice(self._test, size=min_sample_size, replace=True)
                 stat_result = self._stat_test(sample_1, sample_2, **self._kwargs)
-                p_values.append(stat_result[1] if isinstance(stat_result, (tuple,set,list)) else stat_result)
+                p_values.append(stat_result[1] if isinstance(stat_result, (tuple,list)) else stat_result)
                 means.append([np.mean(sample_1), np.mean(sample_2)])
         self._p_values = np.array(p_values)
         self._means = np.array(means)
