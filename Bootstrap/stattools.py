@@ -126,14 +126,14 @@ def correlation_ratio(categories, values):
        ssw: sum of squares within groups
        ssb: sum of squares between groups'''
     
-    cat = np.unique(categories, return_inverse=True)[1]
     values = np.array(values)
+    categories = np.array(categories)
     
     ssw = 0
     ssb = 0
-    for i in np.unique(cat):
-        subgroup = values[np.argwhere(cat == i).flatten()]
-        ssw += np.sum((subgroup-np.mean(subgroup))**2)
+    for category in set(categories):
+        subgroup = values[np.where(categories == category)[0]]
+        ssw += sum((subgroup-np.mean(subgroup))**2)
         ssb += len(subgroup)*(np.mean(subgroup)-np.mean(values))**2
 
     return (ssb / (ssb + ssw))**.5
