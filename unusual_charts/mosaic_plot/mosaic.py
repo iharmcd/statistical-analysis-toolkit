@@ -42,10 +42,10 @@ def mosaic_plot(rc_table, title=None, residuals=None):
             \nRecieved value: '{residuals}' \n\nUse ['standardized', 'percentage', None].")
 
         h = heights.loc[i]
-        chart += [go.Bar(y=h*100, x=(np.cumsum(widths) - widths)*100, width=widths*100, offset=0, 
+        chart += [go.Bar(y=h, x=(np.cumsum(widths) - widths)*100, width=widths*100, offset=0, 
                          text=rc_table.loc[i], textposition='inside', marker=marker, name=i, textangle=0,
                          customdata=customdata, texttemplate=texttemplate,
-                         hovertemplate="<br>".join(['height: %{y:.1f}%',
+                         hovertemplate="<br>".join(['height: %{y:.1%}',
                                                     'width: %{width:.1f}%',
                                                     'value: %{text:,}',
                                                      error_info])
@@ -53,7 +53,7 @@ def mosaic_plot(rc_table, title=None, residuals=None):
 
     fig = go.Figure(chart)
     fig.update_layout(template='simple_white', barmode="stack", uniformtext={'mode': "hide", 'minsize': 12},
-                      yaxis={'range': [0, 100], 'title':'percentage (%)'},
+                      yaxis={'tickformat':',.0%'},
                       xaxis={'range': [0, 100], 'tickvals': (np.cumsum(widths) - widths / 2) * 100,
                 'ticktext': ["{}<br>{:,}".format(l, w) for l, w in zip(labels, rc_table.sum(axis=0).tolist())]},
                       title={'text': title, 'x': .5}, showlegend=showlegend,
