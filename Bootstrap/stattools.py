@@ -270,3 +270,53 @@ def cohens_d(control,test):
 
 def lift(before, after):
     return (after - before) / before
+
+
+
+class BayesAB:
+    
+    def __init__(self, size=100_000, random_state=None):
+        self.size = size
+        self.random_state = random_state
+
+    def fit(self, c_a, c_b, t_a, t_b, prior=()):
+        np.random.seed(self.random_state)
+        
+        self.cr_c = c_a / (c_a + c_b)
+        self.cr_t = t_a / (t_a + t_b)
+        
+        pr = (1,1) if not prior else prior
+        
+        self.beta_c = np.random.beta(a=c_a+pr[0],b=c_b+pr[1],size=self.size)
+        self.beta_t = np.random.beta(a=t_a+pr[0],b=t_b+pr[1],size=self.size)
+        
+    def compute(self):
+        proba = np.mean(self.beta_t > self.beta_c)
+        loss_c =  np.mean(np.maximum(self.beta_t - self.beta_c, 0))
+        loss_t =  np.mean(np.maximum(self.beta_c - self.beta_t, 0))
+        uplift = (self.cr_t - self.cr_c) / self.cr_c
+        stats = namedtuple('BayesResult', ('proba', 'uplift','control_loss','test_loss'))
+        return stats(proba, uplift, loss_c,loss_t)
+    
+    def get_chart(self, figsize=(22,6), bins=50, stat='probability',**kwargs):
+        diff = self.beta_t / self.beta_c    
+        ratio = (diff <= 1).sum() / self.size
+        plt.figure(figsize=figsize)
+        plt.subplot(1,3,1)
+        sns.histplot(self.beta_c,label='control', bins=50,stat='probability', **kwargs)
+        sns.histplot(self.beta_t, color='C1',label='test',bins=50,stat='probability')
+        plt.title('Beta distributions for CR')
+        plt.legend()
+        plt.subplot(1,3,2)
+        sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins,**kwargs)
+        plt.xlabel('control')
+        plt.ylabel('test')
+        plt.axline(xy1=[self.beta_c.min(), self.beta_c.min()], xy2=[self.beta_t.max(),self.beta_t.max()], color='black', linestyle='--')
+        plt.title('Joint distribution')
+        plt.subplot(1,3,3)
+        sns.histplot(x=diff, bins=50,stat='probability',cumulative=True, **kwargs)
+        plt.axvline(1, color='black', linestyle='--')
+        plt.axhline(ratio, color='black',linestyle='--')
+        plt.yticks(np.arange(0,1.1,0.1))
+        plt.title('Test/Control diff')
+        plt.show()
