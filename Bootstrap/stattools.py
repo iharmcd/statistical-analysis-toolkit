@@ -298,26 +298,29 @@ class BayesAB:
         stats = namedtuple('BayesResult', ('proba', 'uplift','control_loss','test_loss'))
         return stats(proba, uplift, loss_c,loss_t)
     
-    def get_chart(self, figsize=(22,6), bins=50, stat='probability',**kwargs):
+    def get_chart(self, figsize=(22,6), bins=50):
         diff = self.beta_t / self.beta_c
         min_xy, max_xy = np.min([self.beta_c,self.beta_t]), np.max([self.beta_c,self.beta_t])
         ratio = (diff <= 1).sum() / self.size
+        
         plt.figure(figsize=figsize)
         plt.subplot(1,3,1)
-        sns.histplot(self.beta_c,label='control', bins=50,stat='probability', **kwargs)
-        sns.histplot(self.beta_t, color='C1',label='test',bins=50,stat='probability')
-        plt.title('Beta distributions for CR')
+        sns.histplot(self.beta_c, label='control', bins=bins, stat='probability')
+        sns.histplot(self.beta_t, label='test',bins=bins, stat='probability', color='C1')
+        plt.title('Beta Distributions for CR')
         plt.legend()
+        
         plt.subplot(1,3,2)
-        sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins,**kwargs)
+        sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins)
         plt.xlabel('control')
         plt.ylabel('test')
         plt.axline(xy1=[min_xy, min_xy], xy2=[max_xy,max_xy], color='black', linestyle='--')
-        plt.title('Joint distribution')
+        plt.title('Joint Distribution')
+        
         plt.subplot(1,3,3)
-        sns.histplot(x=diff, bins=50,stat='probability',cumulative=True, **kwargs)
+        sns.histplot(x=diff,bins=bins,stat='probability',cumulative=True)
         plt.axvline(1, color='black', linestyle='--')
         plt.axhline(ratio, color='black',linestyle='--')
         plt.yticks(np.arange(0,1.1,0.1))
-        plt.title('Test/Control diff')
+        plt.title('Test/Control Diff')
         plt.show()
