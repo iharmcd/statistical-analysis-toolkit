@@ -299,7 +299,8 @@ class BayesAB:
         return stats(proba, uplift, loss_c,loss_t)
     
     def get_chart(self, figsize=(22,6), bins=50, stat='probability',**kwargs):
-        diff = self.beta_t / self.beta_c    
+        diff = self.beta_t / self.beta_c
+        min_xy, max_xy = np.min([self.beta_c,self.beta_t]), np.max([self.beta_c,self.beta_t])
         ratio = (diff <= 1).sum() / self.size
         plt.figure(figsize=figsize)
         plt.subplot(1,3,1)
@@ -311,7 +312,7 @@ class BayesAB:
         sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins,**kwargs)
         plt.xlabel('control')
         plt.ylabel('test')
-        plt.axline(xy1=[self.beta_c.min(), self.beta_c.min()], xy2=[self.beta_t.max(),self.beta_t.max()], color='black', linestyle='--')
+        plt.axline(xy1=[min_xy, min_xy], xy2=[max_xy,max_xy], color='black', linestyle='--')
         plt.title('Joint distribution')
         plt.subplot(1,3,3)
         sns.histplot(x=diff, bins=50,stat='probability',cumulative=True, **kwargs)
