@@ -275,52 +275,64 @@ def lift(before, after):
 
 class BayesAB:
     
-    def __init__(self, size=100_000, random_state=None):
+    def __init__(self, size=100_000, conf_level=0.95, random_state=None):
         self.size = size
         self.random_state = random_state
+        self.left_quant, self.right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
 
     def fit(self, c_a, c_b, t_a, t_b, prior=()):
         np.random.seed(self.random_state)
         
         self.cr_c = c_a / (c_a + c_b)
         self.cr_t = t_a / (t_a + t_b)
+        self.lift = self.uplift(self.cr_c,self.cr_t)
         
         pr = (1,1) if not prior else prior
         
         self.beta_c = np.random.beta(a=c_a+pr[0],b=c_b+pr[1],size=self.size)
         self.beta_t = np.random.beta(a=t_a+pr[0],b=t_b+pr[1],size=self.size)
         
+    def uplift(self, before, after):
+        return (after - before) / before
+        
     def compute(self):
         proba = np.mean(self.beta_t > self.beta_c)
-        loss_c =  np.mean(np.maximum(self.beta_t - self.beta_c, 0))
-        loss_t =  np.mean(np.maximum(self.beta_c - self.beta_t, 0))
-        uplift = (self.cr_t - self.cr_c) / self.cr_c
-        stats = namedtuple('BayesResult', ('proba', 'uplift','control_loss','test_loss'))
-        return stats(proba, uplift, loss_c,loss_t)
+        #loss_c =  np.mean(np.maximum(self.beta_t - self.beta_c, 0))
+        #loss_t =  np.mean(np.maximum(self.beta_c - self.beta_t, 0))
+        uplift_loss_c = np.mean(np.maximum(self.uplift(self.beta_c, self.beta_t),0))
+        uplift_loss_t = np.mean(np.maximum(self.uplift(self.beta_t, self.beta_c),0))
+        ci = np.quantile(self.uplift(self.beta_c, self.beta_t), q=[self.left_quant, self.right_quant]).tolist()
+        stats = namedtuple('BayesResult', ('proba', 'uplift','uplift_ci','control_loss','test_loss'))
+        return stats(proba, self.lift, ci, uplift_loss_c,uplift_loss_t)
     
-    def get_chart(self, figsize=(22,6), bins=50):
-        diff = self.beta_t / self.beta_c
+    def get_charts(self, figsize=(22,6), bins=50):
+        thresh = 0
+        diff = self.uplift(self.beta_c, self.beta_t)
+        #diff = self.beta_t / self.beta_c
         min_xy, max_xy = np.min([self.beta_c,self.beta_t]), np.max([self.beta_c,self.beta_t])
-        ratio = (diff <= 1).sum() / self.size
+        #ratio = (diff <= thresh).sum() / self.size
         
         plt.figure(figsize=figsize)
         plt.subplot(1,3,1)
-        sns.histplot(self.beta_c, label='control', bins=bins, stat='probability')
+        sns.histplot(self.beta_c, label='control', bins=bins, stat='probability', color='#19D3F3')
         sns.histplot(self.beta_t, label='test',bins=bins, stat='probability', color='C1')
         plt.title('Beta Distributions for CR')
         plt.legend()
         
         plt.subplot(1,3,2)
-        sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins)
+        sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins, color='#3366CC')
         plt.xlabel('control')
         plt.ylabel('test')
         plt.axline(xy1=[min_xy, min_xy], xy2=[max_xy,max_xy], color='black', linestyle='--')
         plt.title('Joint Distribution')
         
         plt.subplot(1,3,3)
-        sns.histplot(x=diff,bins=bins,stat='probability',cumulative=True)
-        plt.axvline(1, color='black', linestyle='--')
-        plt.axhline(ratio, color='black',linestyle='--')
+        h = sns.histplot(x=diff,bins=bins,stat='probability',cumulative=True, color='#636EFA')
+        for i in h.patches:
+            if i.get_x() <= thresh:
+                i.set_facecolor('#EF553B')
+        plt.axvline(x=self.lift, color='black', linestyle='--')
+        #plt.axhline(ratio, color='black',linestyle='--')
         plt.yticks(np.arange(0,1.1,0.1))
-        plt.title('Test/Control Diff')
+        plt.title('Uplift')
         plt.show()
