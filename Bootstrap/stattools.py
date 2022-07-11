@@ -287,10 +287,19 @@ class BayesAB:
         self.cr_t = t_a / (t_a + t_b)
         self.lift = self.uplift(self.cr_c,self.cr_t)
         
-        pr = (1,1) if not prior else prior
-        
+        if not isinstance(prior, (list,tuple)):
+            raise TypeError(f'You can use for prior only list or tuple. Passed {type(prior).__name__}')
+        elif not prior:
+            pr = (1,) * 4
+        elif len(prior) == 2:
+            pr = prior * 2
+        elif len(prior) in [1,3] or len(prior) > 4:
+            raise ValueError('You can pass only two or four values')
+        else:
+            pr = prior
+  
         self.beta_c = np.random.beta(a=c_a+pr[0],b=c_b+pr[1],size=self.size)
-        self.beta_t = np.random.beta(a=t_a+pr[0],b=t_b+pr[1],size=self.size)
+        self.beta_t = np.random.beta(a=t_a+pr[2],b=t_b+pr[3],size=self.size)
         
     def uplift(self, before, after):
         return (after - before) / before
