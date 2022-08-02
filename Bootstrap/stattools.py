@@ -308,11 +308,11 @@ class BayesAB:
         proba = np.mean(self.beta_t > self.beta_c)
         #loss_c =  np.mean(np.maximum(self.beta_t - self.beta_c, 0))
         #loss_t =  np.mean(np.maximum(self.beta_c - self.beta_t, 0))
-        uplift_loss_c = np.mean(np.maximum(self.uplift(self.beta_c, self.beta_t),0))
-        uplift_loss_t = np.mean(np.maximum(self.uplift(self.beta_t, self.beta_c),0))
+        loss_c = np.mean(np.maximum(self.uplift(self.beta_c, self.beta_t),0)) #uplift_loss_c
+        loss_t = np.mean(np.maximum(self.uplift(self.beta_t, self.beta_c),0)) #uplift_loss_t
         ci = np.quantile(self.uplift(self.beta_c, self.beta_t), q=[self.left_quant, self.right_quant]).tolist()
         stats = namedtuple('BayesResult', ('proba', 'uplift','uplift_ci','control_loss','test_loss'))
-        return stats(proba, self.lift, ci, uplift_loss_c,uplift_loss_t)
+        return stats(proba, self.lift, ci, loss_c, loss_t)
     
     def get_charts(self, figsize=(22,6), bins=50):
         thresh = 0
