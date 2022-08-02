@@ -345,3 +345,44 @@ class BayesAB:
         plt.yticks(np.arange(0,1.1,0.1))
         plt.title('Uplift')
         plt.show()
+
+        
+        
+def bayes_duration_estimator(cr_baseline, uplift, size_per_sample, boot_size=1000, beta_size=10_000, random_state=None):
+    '''
+    https://marketing.dynamicyield.com/ab-test-duration-calculator/
+    
+    required libs:
+    import numpy as np
+    from collections import namedtuple
+    from tqdm import tqdm
+    '''
+    
+    np.random.seed(random_state)
+    
+    def get_counts(p: float,size_per_sample):
+        return np.array(sorted(np.unique(np.random.binomial(n=1, p=p, size=size_per_sample),return_counts=True)[1]))
+    
+    p_control = cr_baseline
+    p_test = cr_baseline*(1+uplift)
+
+    power = 0
+    days = 0
+    
+    sample_size = size_per_sample
+    while True:
+        probas = []
+        for i in tqdm(range(boot_size)):
+            c = np.random.beta(*get_counts(p_control,sample_size),size=beta_size)
+            t = np.random.beta(*get_counts(p_test,sample_size),size=beta_size)
+            probas.append((t>c).mean())
+            
+        days += 1
+        power = (np.array(probas) >= 0.95).mean()
+        if  power >= 0.8:
+            break
+        
+        sample_size += size_per_sample
+        
+    result = namedtuple('EstimatorResult',('days','sample_size'))    
+    return result(days, sample_size)
