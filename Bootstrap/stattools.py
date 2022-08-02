@@ -348,7 +348,7 @@ class BayesAB:
 
         
         
-def bayes_duration_estimator(cr_baseline, uplift, size_per_sample, boot_size=1000, beta_size=10_000, random_state=None):
+def bayes_duration_estimator(cr_baseline, uplift, avg_dau_per_sample, boot_size=1000, beta_size=10_000, random_state=None):
     '''
     https://marketing.dynamicyield.com/ab-test-duration-calculator/
     
@@ -360,8 +360,8 @@ def bayes_duration_estimator(cr_baseline, uplift, size_per_sample, boot_size=100
     
     np.random.seed(random_state)
     
-    def get_counts(p: float,size_per_sample):
-        return np.array(sorted(np.unique(np.random.binomial(n=1, p=p, size=size_per_sample),return_counts=True)[1]))
+    def get_counts(p: float, size):
+        return np.array(sorted(np.unique(np.random.binomial(n=1, p=p, size=size),return_counts=True)[1]))
     
     p_control = cr_baseline
     p_test = cr_baseline*(1+uplift)
@@ -369,7 +369,7 @@ def bayes_duration_estimator(cr_baseline, uplift, size_per_sample, boot_size=100
     power = 0
     days = 0
     
-    sample_size = size_per_sample
+    sample_size = avg_dau_per_sample
     while True:
         probas = []
         for i in tqdm(range(boot_size)):
@@ -382,7 +382,7 @@ def bayes_duration_estimator(cr_baseline, uplift, size_per_sample, boot_size=100
         if  power >= 0.8:
             break
         
-        sample_size += size_per_sample
+        sample_size += avg_dau_per_sample
         
     result = namedtuple('EstimatorResult',('days','sample_size'))    
     return result(days, sample_size)
