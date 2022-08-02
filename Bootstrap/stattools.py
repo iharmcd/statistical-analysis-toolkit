@@ -272,9 +272,13 @@ def lift(before, after):
     return (after - before) / before
 
 
-
 class BayesAB:
-    
+    '''required libs:
+    import numpy as np
+    from collections import namedtuple
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    '''
     def __init__(self, size=100_000, conf_level=0.95, random_state=None):
         self.size = size
         self.random_state = random_state
