@@ -388,5 +388,5 @@ def bayes_duration_estimator(cr_baseline, uplift, avg_dau_per_sample, boot_size=
         
         sample_size += avg_dau_per_sample
         
-    result = namedtuple('EstimatorResult',('days','sample_size'))    
-    return result(days, sample_size)
+    result = namedtuple('EstimatorResult',('days', 'size_per_sample', 'power'))    
+    return result(days, sample_size, power)
