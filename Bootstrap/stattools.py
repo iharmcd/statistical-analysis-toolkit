@@ -273,7 +273,10 @@ def lift(before, after):
 
 
 class BayesAB:
-    '''required libs:
+    '''
+    https://marketing.dynamicyield.com/bayesian-calculator/
+    
+    required libs:
     import numpy as np
     from collections import namedtuple
     import matplotlib.pyplot as plt
