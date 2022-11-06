@@ -47,9 +47,9 @@ def update_figures(trials, prob):
                                  go.Scatter(x=trials_range, y=binom_cdf, name='cdf', marker_color='#636EFA', opacity=0.85,
                                  mode='lines+markers',yaxis='y2')])
 		binom_chart.update_layout(template='plotly_white', hovermode='x', xaxis={'title':'possible outcomes'}, 
-                                yaxis={'title':'proba pmf','tickformat':'.1%'},
+                                yaxis={'title':'proba','tickformat':'.1%'},
 				yaxis2={'overlaying': 'y', 'position': 1, 'side': 'right','rangemode':'tozero',
-					'tickformat':'.1%','title':'proba cdf'},
+					'tickformat':'.1%'},
 				uniformtext_minsize=10, uniformtext_mode='hide')
         
 		mx, var, _, _ = st.binom.stats(trials, prob, moments='mvsk')
