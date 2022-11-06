@@ -33,23 +33,18 @@ def update_figures(trials, prob):
 
 	def binominal(n, p):
 		n_range = np.array(range(n+1))
-		return n_range, st.binom.pmf(n_range, n, p)
-    
-	def cumsum(probas):
-       		 to_sum = 0
-       		 cumsum = [to_sum := to_sum + i for i in probas]
-       		 return cumsum
+		return n_range, st.binom.pmf(n_range, n, p), st.binom.cdf(n_range,n,p)
     
 	bar_chart = []	
 	description = ''
 
 	try:
-		trials_range, binom_pmf = binominal(trials,prob)
+		trials_range, binom_pmf, binom_cdf = binominal(trials,prob)
 		binom_chart = go.Figure([go.Bar(x=trials_range,y=binom_pmf, 
                                         hoverinfo='text+x+name',yaxis='y1', 
                                         text=list(map(lambda x: '{:.1%}'.format(x),binom_pmf)), textposition='inside',
                                         marker_color='#FFA15A', opacity=0.85, name='cdf'),
-                                 go.Scatter(x=trials_range, y=cumsum(binom_pmf), name='pmf', marker_color='#636EFA', opacity=0.85,
+                                 go.Scatter(x=trials_range, y=binom_cdf, name='pmf', marker_color='#636EFA', opacity=0.85,
                                  mode='lines+markers',yaxis='y2')])
 		binom_chart.update_layout(template='plotly_white', hovermode='x', xaxis={'title':'possible outcomes'}, 
                                 yaxis={'title':'proba pmf','tickformat':'.1%'},
