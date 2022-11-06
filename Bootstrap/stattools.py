@@ -287,12 +287,14 @@ class BayesAB:
         self.random_state = random_state
         self.left_quant, self.right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
 
-    def fit(self, c_a, c_b, t_a, t_b, prior=()):
+    def fit(self, control_a, control_total, test_a, test_total, prior=()):
+        control_b = control_total - control_a
+        test_b = test_total - test_a
         np.random.seed(self.random_state)
         
-        self.cr_c = c_a / (c_a + c_b)
-        self.cr_t = t_a / (t_a + t_b)
-        self.lift = self.uplift(self.cr_c,self.cr_t)
+        self.cr_control = control_a / control_total
+        self.cr_test = test_a / test_total
+        self.lift = self.uplift(self.cr_control,self.cr_test)
         
         if not isinstance(prior, (list,tuple)):
             raise TypeError(f'You can use for prior only list or tuple. Passed {type(prior).__name__}')
@@ -305,38 +307,38 @@ class BayesAB:
         else:
             pr = prior
   
-        self.beta_c = np.random.beta(a=c_a+pr[0],b=c_b+pr[1],size=self.size)
-        self.beta_t = np.random.beta(a=t_a+pr[2],b=t_b+pr[3],size=self.size)
+        self.beta_control = np.random.beta(a=control_a+pr[0],b=control_b+pr[1],size=self.size)
+        self.beta_test = np.random.beta(a=test_a+pr[2],b=test_b+pr[3],size=self.size)
         
     def uplift(self, before, after):
         return (after - before) / before
         
     def compute(self):
-        proba = np.mean(self.beta_t > self.beta_c)
-        #loss_c =  np.mean(np.maximum(self.beta_t - self.beta_c, 0))
-        #loss_t =  np.mean(np.maximum(self.beta_c - self.beta_t, 0))
-        loss_c = np.mean(np.maximum(self.uplift(self.beta_c, self.beta_t),0)) #uplift_loss_c
-        loss_t = np.mean(np.maximum(self.uplift(self.beta_t, self.beta_c),0)) #uplift_loss_t
-        ci = np.quantile(self.uplift(self.beta_c, self.beta_t), q=[self.left_quant, self.right_quant]).tolist()
+        proba = np.mean(self.beta_test > self.beta_control)
+        #loss_control =  np.mean(np.maximum(self.beta_test - self.beta_control, 0))
+        #loss_test =  np.mean(np.maximum(self.beta_control - self.beta_test, 0))
+        loss_control = np.mean(np.maximum(self.uplift(self.beta_control, self.beta_test),0)) #uplift_loss_c
+        loss_test = np.mean(np.maximum(self.uplift(self.beta_test, self.beta_control),0)) #uplift_loss_t
+        ci = np.quantile(self.uplift(self.beta_control, self.beta_test), q=[self.left_quant, self.right_quant]).tolist()
         stats = namedtuple('BayesResult', ('proba', 'uplift','uplift_ci','control_loss','test_loss'))
-        return stats(proba, self.lift, ci, loss_c, loss_t)
+        return stats(proba, self.lift, ci, loss_control, loss_test)
     
     def get_charts(self, figsize=(22,6), bins=50):
         thresh = 0
-        diff = self.uplift(self.beta_c, self.beta_t)
-        #diff = self.beta_t / self.beta_c
-        min_xy, max_xy = np.min([self.beta_c,self.beta_t]), np.max([self.beta_c,self.beta_t])
+        diff = self.uplift(self.beta_control, self.beta_test)
+        #diff = self.beta_test / self.beta_control
+        min_xy, max_xy = np.min([self.beta_control, self.beta_test]), np.max([self.beta_control, self.beta_test])
         #ratio = (diff <= thresh).sum() / self.size
         
         plt.figure(figsize=figsize)
         plt.subplot(1,3,1)
-        sns.histplot(self.beta_c, label='control', bins=bins, stat='probability', color='#19D3F3')
-        sns.histplot(self.beta_t, label='test',bins=bins, stat='probability', color='C1')
+        sns.histplot(self.beta_control, label='control', bins=bins, stat='probability', color='#19D3F3')
+        sns.histplot(self.beta_test, label='test',bins=bins, stat='probability', color='C1')
         plt.title('Beta Distributions for CR')
         plt.legend()
         
         plt.subplot(1,3,2)
-        sns.histplot(x=self.beta_c,y=self.beta_t,bins=bins, color='#3366CC')
+        sns.histplot(x=self.beta_control,y=self.beta_test,bins=bins, color='#3366CC')
         plt.xlabel('control')
         plt.ylabel('test')
         plt.axline(xy1=[min_xy, min_xy], xy2=[max_xy,max_xy], color='black', linestyle='--')
