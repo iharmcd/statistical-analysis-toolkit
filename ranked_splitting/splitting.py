@@ -15,18 +15,17 @@ class RankedSplit:
         if not isinstance(strat_size, int):
             raise TypeError('strat_size must be int')
         
+        if size_per_sample * samples_cnt > 1 or size_per_sample <= 0:
+            raise ValueError('The total ratio of samples must be greater than 0 and must not exceed 1')
+        else:
+            self.test_size = size_per_sample
+            #self.control_size = size_per_sample / (1 - size_per_sample)
         if size_per_sample * strat_size < 1:
             raise ValueError(f'With {size_per_sample=} your strat_size must be >= {int(1/size_per_sample)}')
         
-        if samples_cnt == 2:
-            if size_per_sample > 0 and size_per_sample <= 0.5:
-                self.test_size = size_per_sample
-                self.control_size = size_per_sample / (1 - size_per_sample)
-            else:
-                raise ValueError('Size per sample must > 0 and <= 0.5') 
-        else:
-             self.test_size = size_per_sample
-        
+
+            
+
     def get_rank(self, collection):
         rank = pd.Series(collection).rank(ascending=False, method='first')
         output = pd.DataFrame({'data':collection,'rank':rank})
@@ -41,20 +40,15 @@ class RankedSplit:
         self.ranked_dataset = self.ranked_dataset[~self.ranked_dataset['rank'].isin(filter_)]
     
     def get_split(self):
-        _, first = train_test_split(self.ranked_dataset, 
+        if self.samples_cnt == 1:
+            train_size = None
+        else:
+            train_size = self.test_size
+        second, first = train_test_split(self.ranked_dataset, 
+                                         train_size=train_size,
                                          test_size=self.test_size,
                                          shuffle=True, 
                                          stratify=self.ranked_dataset['rank'],
                                          random_state=self.random_state)
-        if self.samples_cnt == 1:
-            return first
-        else:
-            if self.test_size == 0.5:
-                return first, _
-            else:
-                _, second = train_test_split(_, 
-                                             test_size=self.control_size, 
-                                             shuffle=True, 
-                                             stratify=_['rank'],
-                                             random_state=self.random_state)
-                return first, second
+       
+        return first, second
