@@ -139,7 +139,7 @@ def correlation_ratio(categories, values):
     return (ssb / (ssb + ssw))**.5
 
 
-def cramers_v(rc_table):
+def cramers_v(rc_table, observations='raise'):
     
     '''Calculating cramers_v correlation for categorical data. 
        https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V
@@ -147,9 +147,8 @@ def cramers_v(rc_table):
     
     rc_table = np.array(rc_table)
     
-    if rc_table.min() < 5:
-        raise ValueError('Not enough observations')
-    else:
+    def get_corr(rc_table):
+        
         if rc_table.min() < 10:
             correction = True
         else:
@@ -159,7 +158,15 @@ def cramers_v(rc_table):
         chi2_stats = st.chi2_contingency(rc_table, correction=correction)
         cramers_v = (chi2_stats[0]/(n*min(rc_table.shape[0]-1, rc_table.shape[1]-1)))**.5
         stat = namedtuple('CramersvResult', ('corr', 'pvalue','chi2'))
-        return stat(cramers_v, chi2_stats[1], chi2_stats[0])
+        return stat(cramers_v, chi2_stats[1], chi2_stats[0])    
+    
+    if observations == 'raise':
+        if rc_table.min() < 5:
+            raise ValueError('Not enough observations')
+        else:
+            return get_corr(rc_table)
+    elif observations == 'ignore':
+        return get_corr(rc_table)
 
 
 def robust_mean(data, trunc_level=.2, type_='truncated'):
