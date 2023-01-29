@@ -2,7 +2,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 class RankedSplit:
-    '''test'''
     
     def __init__(self, size_per_sample, strat_size=10, samples_cnt=2, random_state=None):
         self.strat_size = strat_size
