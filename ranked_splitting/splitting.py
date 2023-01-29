@@ -22,7 +22,7 @@ class RankedSplit:
             #self.control_size = size_per_sample / (1 - size_per_sample)
         if size_per_sample * strat_size < 1:
             raise ValueError(f'With {size_per_sample=} your strat_size must be >= {int(1/size_per_sample)}')
-
+    
     def get_rank(self, collection):
         rank = pd.Series(collection).rank(ascending=False, method='first')
         output = pd.DataFrame({'data':collection,'rank':rank})
@@ -48,4 +48,4 @@ class RankedSplit:
                                          stratify=self.ranked_dataset['rank'],
                                          random_state=self.random_state)
        
-        return first, second
+        return first.drop('rank',axis=1), second.drop('rank',axis=1)
