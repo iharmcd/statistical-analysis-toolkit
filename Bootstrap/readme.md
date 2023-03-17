@@ -10,3 +10,4 @@
 Stattools:
 - ab_testing
 - corr_analysis
+- deprecated
