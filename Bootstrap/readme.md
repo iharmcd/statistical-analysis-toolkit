@@ -9,5 +9,7 @@
 
 Stattools:
 - ab_testing
+  - test_design
+  - bootstrap
 - corr_analysis
 - deprecated
