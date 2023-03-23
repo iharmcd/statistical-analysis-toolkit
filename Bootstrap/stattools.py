@@ -192,70 +192,33 @@ def events_sum(probas: list) -> float:
         second_element = events_sum(probas[1:])
         return probas[0] + second_element - (probas[0] * second_element)
 
-class PowerAnalysis:
-    def __init__(self, alpha=0.05, power_thresh=0.8, stat_test=st.ttest_ind, bootsize=1000, 
-                 random_state=None, **kwargs):
-        self._bootsize = bootsize
+class TestAnalyzer:
+    def __init__(self, stat=st.ttest_ind, alpha=0.05, boot_size=10_000, random_state=None, **kwargs):
+        self._boot_size = boot_size
         self._random_state=random_state
         self._alpha = alpha
-        self._power = power_thresh
-        self._stat_test = stat_test
+        self._stat = stat
         self._kwargs = kwargs
         
-    def fit(self, *samples, lift=None, min_sample_size=None):
-        if not samples or len(samples) > 2:
-            raise ValueError('use one or two samples')
-        else:
-            self._samples = [np.array(i) for i in samples]
-        if not lift:
-            lift = 1
-        if len(self._samples) == 1:
-            self._control = self._samples[0]
-            self._test = self._control * lift
-        else:
-            self._control, self._test = self._samples
-        if not min_sample_size:
-            min_sample_size = max(len(self._control), len(self._test))
-                
-        p_values = []
-        means = []
+    def fit(self, sample, samples_ratio=0.5, progress_bar=False):
         np.random.seed(self._random_state)
-        for i in range(self._bootsize):
-                sample_1 = np.random.choice(self._control, size=min_sample_size, replace=True)
-                sample_2 = np.random.choice(self._test, size=min_sample_size, replace=True)
-                stat_result = self._stat_test(sample_1, sample_2, **self._kwargs)
-                p_values.append(stat_result[1] if isinstance(stat_result, (tuple,list)) else stat_result)
-                means.append([np.mean(sample_1), np.mean(sample_2)])
+        p_values = []
+        self._means = []
+        size = len(sample)
+        size_per_sample = int(samples_ratio * size)
+        rng = tqdm(range(self._boot_size)) if progress_bar else range(self._boot_size)
+        for i in rng:
+                sample_data = np.random.choice(sample, size=size, replace=True)
+                a,b = sample_data[:size_per_sample], sample_data[size_per_sample:] 
+                stat_result = self._stat(a,b, **self._kwargs)
+                p_values.append(stat_result.pvalue if isinstance(stat_result, tuple) else stat_result)
+                self._means.append(np.mean(a)-np.mean(b))
         self._p_values = np.array(p_values)
-        self._means = np.array(means)
         
     def compute_fpr(self, weighted=False):
-        fpr = (self._p_values <= self._alpha).sum() / self._bootsize
+        fpr = np.mean(self._p_values <= self._alpha)
         return fpr * max(self._p_values) if weighted else fpr
-    
-    def get_charts(self, figsize=(18,6), bins=10, alpha=0.7):
-        plt.figure(figsize=figsize)
-        plt.subplot(1,3,1)
-        sns.histplot(self._control, bins=bins, label=f'sample_1')
-        sns.histplot(self._test, bins=bins, label=f'sample_2', color='C1', alpha=alpha)
-        plt.title('Distribution of Samples')
-        plt.legend()
-        plt.subplot(1,3,2)
-        sns.histplot(self._means[:,0], bins=bins, label=f'sample_1')
-        sns.histplot(self._means[:,1], bins=bins, label=f'sample_2', color='C1', alpha=alpha)
-        plt.title('Bootstrap Means Distribution')
-        plt.legend()
-        plt.subplot(1,3,3)
-        p_val_bins = 100 if self._alpha <= 0.01 else int(1/self._alpha)
-        sns.histplot(self._p_values, color='C3', stat='probability', bins=p_val_bins)
-        plt.axvline(self._alpha, color='black', linewidth=2, label=f'alpha={self._alpha}', ls='--')
-        hist = np.histogram(self._p_values, bins=p_val_bins)
-        if (hist[0] / hist[0].sum()).max() >= self._power: 
-            plt.axhline(0.8, color='blue', linewidth=2, label=f'power_threshold={self._power}', ls='--')
-        plt.legend()
-        plt.title('P-values Distribution')
-        plt.show()
-        
+
     def perform_chisquare(self, bins=None):
         if not bins:
             len_ = len(np.arange(0, max(self._p_values), self._alpha))
@@ -263,6 +226,24 @@ class PowerAnalysis:
         else:
             self.bins = bins
         return st.chisquare(np.histogram(self._p_values, bins=self.bins)[0])
+    
+    def get_charts(self, figsize=(18,6), bins=20):
+        plt.figure(figsize=figsize)
+        plt.subplot(1,2,1)
+        sns.histplot(self._means, bins=bins, color='#19D3F3', stat='density', 
+                     label=f'AVG: {round(np.mean(self._means),3)}\nSTD: {round(np.std(self._means),3)}')
+        plt.legend()
+        plt.title('Bootstrap Mean(s) Distribution')
+        plt.subplot(1,2,2)
+        p_val_bins = 100 if self._alpha <= 0.01 else int(1/self._alpha)
+        sns.histplot(self._p_values, color='C3', stat='probability', bins=p_val_bins,label='p-value')
+        plt.axvline(self._alpha, color='black', linewidth=2, label=f'alpha={self._alpha}', ls='--')
+        hist = np.histogram(self._p_values, bins=p_val_bins)
+        plt.legend()
+        plt.title('P-values Distribution')
+        plt.show()
+        
+
         
 
 def cohens_d(control,test):
