@@ -345,8 +345,16 @@ class BayesAB:
 
         
         
-def bayes_duration_estimator(cr_baseline, uplift, avg_dau_per_sample, boot_size=1000, beta_size=10_000, random_state=None):
+def bayes_duration_estimator(cr_baseline, 
+                             uplift, 
+                             total_daily_size, 
+                             power_level=0.8, 
+                             boot_size=10_000, 
+                             beta_size=10_000,
+                             significance_level=0.95,
+                             random_state=None):
     '''
+    one-sided duration_estimator
     https://marketing.dynamicyield.com/ab-test-duration-calculator/
     
     required libs:
@@ -365,21 +373,17 @@ def bayes_duration_estimator(cr_baseline, uplift, avg_dau_per_sample, boot_size=
 
     power = 0
     days = 0
-    
-    sample_size = avg_dau_per_sample
-    while True:
+    sample_size = 0
+    while power < power_level:
+        sample_size += total_daily_size
         probas = []
         for i in tqdm(range(boot_size)):
-            c = np.random.beta(*get_counts(p_control,sample_size),size=beta_size)
-            t = np.random.beta(*get_counts(p_test,sample_size),size=beta_size)
+            c = np.random.beta(*get_counts(p_control,int(sample_size/2)),size=beta_size)
+            t = np.random.beta(*get_counts(p_test,int(sample_size/2)),size=beta_size)
             probas.append((t>c).mean())
             
         days += 1
-        power = (np.array(probas) >= 0.95).mean()
-        if  power >= 0.8:
-            break
-        
-        sample_size += avg_dau_per_sample
-        
-    result = namedtuple('EstimatorResult',('days', 'size_per_sample', 'power'))    
+        power = (np.array(probas) >= significance_level).mean()
+
+    result = namedtuple('EstimatorResult',('days', 'total_sample_size', 'power'))    
     return result(days, sample_size, power)
