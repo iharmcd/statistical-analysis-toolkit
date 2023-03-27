@@ -385,9 +385,6 @@ def bayes_duration_estimator(cr_baseline,
     
     np.random.seed(random_state)
     
-    def get_counts(p: float, size):
-        return np.array(sorted(np.unique(np.random.binomial(n=1, p=p, size=size),return_counts=True)[1]))
-    
     p_control = cr_baseline
     p_test = cr_baseline*(1+uplift)
 
@@ -396,10 +393,13 @@ def bayes_duration_estimator(cr_baseline,
     sample_size = 0
     while power < power_level:
         sample_size += total_daily_size
+        size_per_sample = int(sample_size/2)
         probas = []
         for i in tqdm(range(boot_size)):
-            c = np.random.beta(*get_counts(p_control,int(sample_size/2)),size=beta_size)
-            t = np.random.beta(*get_counts(p_test,int(sample_size/2)),size=beta_size)
+            a_control = np.random.binomial(n=size_per_sample, p=p_control)
+            a_test = np.random.binomial(n=size_per_sample, p=p_test)
+            c = np.random.beta(a_control,size_per_sample-a_control, size=beta_size)
+            t = np.random.beta(a_test,size_per_sample-a_test, size=beta_size)
             probas.append((t>c).mean())
             
         days += 1
