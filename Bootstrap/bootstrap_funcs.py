@@ -122,6 +122,8 @@ def bootstrap_conversion_duration_estimator(cr_baseline,
                                             progress_bar=True,
                                             **kwargs):
     '''
+    https://www.optimizely.com/sample-size-calculator
+    
     required libs:
     import numpy as np
     from collections import namedtuple
