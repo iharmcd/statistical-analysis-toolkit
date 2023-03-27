@@ -109,3 +109,46 @@ def bootstrap_duration_estimator(target_sample,
             
     result = namedtuple('EstimatorResult',('days', 'total_sample_size', 'power'))    
     return result(int(current_day_size/total_daily_size), current_day_size, power)
+
+
+def bootstrap_conversion_duration_estimator(cr_baseline, 
+                                            uplift, 
+                                            total_daily_size, 
+                                            power_level=0.8, 
+                                            boot_size=10_000, 
+                                            beta_size=10_000,
+                                            significance_level=0.05,
+                                            random_state=None, 
+                                            progress_bar=True,
+                                            **kwargs):
+    '''
+    required libs:
+    import numpy as np
+    from collections import namedtuple
+    from tqdm import tqdm
+    '''
+    from statsmodels.stats.proportion import proportions_ztest
+    
+    np.random.seed(random_state)
+    
+    p_control = cr_baseline
+    p_test = cr_baseline*(1+uplift)
+
+    power = 0
+    days = 0
+    sample_size = 0
+    while power < power_level:
+        sample_size += total_daily_size
+        size_per_sample = int(sample_size/2)
+        probas = []
+        rng = tqdm(range(boot_size)) if progress_bar else range(boot_size)
+        for i in rng:
+            a_control = np.random.binomial(n=size_per_sample, p=p_control)
+            a_test = np.random.binomial(n=size_per_sample, p=p_test)
+            probas.append(proportions_ztest([a_control, a_test],[size_per_sample]*2,**kwargs)[1])
+            
+        days += 1
+        power = (np.array(probas) <= significance_level).mean()
+
+    result = namedtuple('EstimatorResult',('days', 'total_sample_size', 'power'))    
+    return result(days, sample_size, power)
