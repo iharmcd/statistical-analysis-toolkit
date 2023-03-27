@@ -77,3 +77,35 @@ def ci_binom_wilson(n, p, conf=0.95):
     lower, upper = (a-b)/c, (a+b)/c
     return lower,upper
   
+    
+def bootstrap_duration_estimator(target_sample, 
+                                 total_daily_size, 
+                                 uplift, 
+                                 stat=st.ttest_ind, 
+                                 boot_size=10_000, 
+                                 power_level=0.8, 
+                                 significance_level=0.05, 
+                                 random_state=None,
+                                 progress_bar=True,
+                                 **kwargs):
+    
+    np.random.seed(random_state)
+    uplift += 1
+    current_day_size = 0
+    power = 0
+    
+    while power < power_level:
+        current_day_size += total_daily_size
+        p_values = []
+        rng = tqdm(range(boot_size)) if progress_bar else range(boot_size)
+        
+        for i in rng:
+            sample_data = np.random.choice(target_sample, size=current_day_size, replace=True)
+            sample_size = int(current_day_size/2)
+            a,b = sample_data[:sample_size], sample_data[sample_size:] * uplift
+            stat_result = stat(a,b, **kwargs)
+            p_values.append(stat_result.pvalue if isinstance(stat_result, tuple) else stat_result)
+            power = (np.array(p_values) <= significance_level).mean()
+            
+    result = namedtuple('EstimatorResult',('days', 'total_sample_size', 'power'))    
+    return result(int(current_day_size/total_daily_size), current_day_size, power)
