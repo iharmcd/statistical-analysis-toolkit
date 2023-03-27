@@ -8,51 +8,71 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import namedtuple
 
-class Bootstrap:
+class BootstrapAB:
     
     '''https://en.wikipedia.org/wiki/Bootstrapping_(statistics)'''
 
-    def __init__(self, statistic=np.mean, alpha=0.05, bootsize=10000, random_state=None, **kwargs):
-        self._bootstrap_samples = bootsize
-        self._statistic = statistic
+    def __init__(self, stat=np.mean, confidence_level=0.95, boot_size=10000, random_state=None, **kwargs):
+        self._boot_size = boot_size
+        self._statistic = stat
         self._random_state = random_state
-        self.bootstrap_conf_level = 1 - alpha
-        self.left_quant = (1 - self.bootstrap_conf_level) / 2
-        self.right_quant = 1 - (1 - self.bootstrap_conf_level) / 2
+        self._confidence_level = confidence_level
+        self.left_quant = (1 - confidence_level) / 2
+        self.right_quant = 1 - (1 - confidence_level) / 2
         self._kwargs = kwargs
                 
-    def fit(self, sample_a, sample_b):
+    def fit(self, sample_a, sample_b, progress_bar=False):
         np.random.seed(self._random_state)
-        max_len = max([len(sample_a), len(sample_b)])
-        self._boot_data = []
+        size = max(len(sample_a),len(sample_b))
+        bootstrap_data = []
+        rng = tqdm(range(self._boot_size)) if progress_bar else range(self._boot_size)
+        for i in rng: 
+            sub_a = np.random.choice(sample_a, size=size, replace = True)
+            sub_b = np.random.choice(sample_b, size=size, replace = True)
+            bootstrap_data.append([self._statistic(sub_a,**self._kwargs),self._statistic(sub_b,**self._kwargs)])
+            
+        self._bootstrap_data = np.array(bootstrap_data)
+        self.diffs = self._bootstrap_data[:,1] - self._bootstrap_data[:,0]
+        self.a_ci = self._get_ci(self._bootstrap_data[:,0])
+        self.b_ci = self._get_ci(self._bootstrap_data[:,1])
+        self.diff_ci = self._get_ci(self.diffs)
+        
+    def compute(self, alternative='two-sided'):
+        if alternative not in ['two-sided','one-sided']:
+            raise ValueError(f"Received value: '{alternative}'. Сhoose 'two-sided' or 'one-sided'")
+        p = np.mean(self.diffs > 0)
+        if alternative == 'two-sided':
+            return min(p*2, 2-p*2)
+        else:
+            return 1-p
     
-        for i in range(self._bootstrap_samples): 
-            sub_a = np.random.choice(sample_a, size=max_len, replace = True)
-            sub_b = np.random.choice(sample_b, size=max_len, replace = True)
-            self._boot_data.append(self._statistic(sub_a,**self._kwargs)-self._statistic(sub_b,**self._kwargs)) 
-        self.quants = np.quantile(self._boot_data, [self.left_quant, self.right_quant])
+    def _get_ci(self, data):
+        self.quants = np.quantile(data, [self.left_quant, self.right_quant])
+        return (self.quants[0].round(3),
+                self.quants[1].round(3))
     
-    def compute(self):
-        cdf_p = st.norm.cdf(x = 0, loc = np.mean(self._boot_data), scale = np.std(self._boot_data))
-        p_value = min(2*cdf_p , 2-2*cdf_p)
-        return p_value
+    def get_charts(self, figsize=(22,6), bins=20, stat='probability'):
     
-    def get_ci(self):
-        stat = namedtuple('ConfidenceInterval', ('level', 'low','high'))
-        return stat(self.bootstrap_conf_level, self.quants[0].round(4),self.quants[1].round(4))
-    
-    def get_chart(self, figsize=(7,6), bins=50, stat='count'):
         plt.figure(figsize=figsize)
-        bar = sns.histplot(self._boot_data, bins=bins, stat=stat, color='#636EFA')
+        plt.subplot(1,2,1)
+        sns.histplot(self._bootstrap_data[:,0], bins=bins,  stat=stat, color='#19D3F3',
+                    label=f'A Sample. {self._confidence_level:.0%} CI: {self.a_ci[0]} - {self.a_ci[1]}')
+        sns.histplot(self._bootstrap_data[:,1],bins=bins,  stat=stat, color='C1',
+                    label=f'B Sample. {self._confidence_level:.0%} CI: {self.b_ci[0]} - {self.b_ci[1]}')
+        plt.legend()
+        plt.title(f'Distribution of {self._statistic.__name__}(s) for each group')
+        plt.subplot(1,2,2)
+        bar = sns.histplot(self.diffs, bins=bins, stat=stat, color='#636EFA',
+                           label=f'{self._confidence_level:.0%} CI: {self.diff_ci[0]} - {self.diff_ci[1]}')
         counts = []
         for i in bar.patches:
             counts.append(i.get_height())
-            if i.get_x() <= self.quants[0] or i.get_x() >= self.quants[1]:
+            if i.get_x() <= self.diff_ci[0] or i.get_x() >= self.diff_ci[1]:
                 i.set_facecolor('#EF553B')
-        plt.vlines(self.quants,ymin=0,ymax=max(counts),linestyle='--', 
-                   label=f'{self.bootstrap_conf_level} confidence interval')
+        #plt.vlines(self.quants,ymin=0,ymax=max(counts),linestyle='--') 
         plt.legend()
-        plt.title(f'Distribution of {self._statistic.__name__} differences')
+        plt.title(f'Distribution of {self._statistic.__name__}(s) differences (B-A)')
+        
         
 
 def efron_tibshirani(sample_a, sample_b, bootsize=10000, random_state=None):
