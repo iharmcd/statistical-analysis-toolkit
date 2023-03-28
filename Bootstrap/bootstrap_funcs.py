@@ -153,3 +153,23 @@ def bootstrap_conversion_duration_estimator(cr_baseline,
 
     result = namedtuple('EstimatorResult',('days', 'total_sample_size', 'power'))    
     return result(days, sample_size, power)
+
+
+class CohensD:
+    
+    def __init__(self, calc='from_samples'):
+        if calc not in ['from_samples', 'from_stats']:
+            raise ValueError(f"{calc=}. Must equal to 'from_samples' or 'from_stats'")
+        else:
+            self.calc = calc
+    
+    def __call__(self, *args):
+        if self.calc == 'from_samples':
+            sample1, sample2 = args
+            lift = abs(np.mean(sample1) - np.mean(sample2))
+            sd_pooled = ((np.var(sample1,ddof=1) + np.var(sample2,ddof=1)) / 2)**.5
+            return lift / sd_pooled
+        else:
+            mu1, mu2, std1, std2 = args
+            return abs(mu1-mu2) / ((std1**2 + std2**2) / 2)**.5
+
