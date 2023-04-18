@@ -173,3 +173,21 @@ class CohensD:
             mu1, mu2, std1, std2 = args
             return abs(mu1-mu2) / ((std1**2 + std2**2) / 2)**.5
 
+def permutation_test(sample1, sample2, num_permutations=10000, random_state=None):
+    observed_diff = np.mean(sample1) - np.mean(sample2)
+    combined = np.concatenate((sample1, sample2))
+    count = 0
+    
+    np.random.seed(random_state)
+    for _ in range(num_permutations):
+        np.random.shuffle(combined)
+        perm_sample1 = combined[:len(sample1)]
+        perm_sample2 = combined[len(sample1):]
+        perm_diff = np.mean(perm_sample1) - np.mean(perm_sample2)
+        
+        if perm_diff >= observed_diff:
+            count += 1
+    
+    p = count / num_permutations
+    p_value = min(2*p, 2-2*p)
+    return p_value
