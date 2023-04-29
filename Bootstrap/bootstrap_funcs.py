@@ -191,3 +191,29 @@ def permutation_test(sample1, sample2, num_permutations=10000, random_state=None
     p = count / num_permutations
     p_value = min(2*p, 2-2*p)
     return p_value
+
+
+def calculate_number_of_trials(prob_success: float, desired_accuracy: float) -> int:
+    """
+    Calculates the number of independent trials required to succeed at least once with a probability of desired_accuracy.
+
+    Parameters:
+    prob_success (float): Probability of success for each independent trial.
+    desired_accuracy (float): Desired probability of success.
+
+    Returns:
+    int: Number of independent trials required.
+
+    Raises:
+    ValueError: If prob_success or desired_accuracy is not in the range (0, 1).
+    """
+    def log(base, number):
+        return np.log(number) / np.log(base)
+    
+    if prob_success <= 0 or prob_success >= 1:
+        raise ValueError("prob_success should be in the range (0, 1).")
+    if desired_accuracy <= 0 or desired_accuracy >= 1:
+        raise ValueError("desired_accuracy should be in the range (0, 1).")
+
+    num_trials = log(1 - prob_success, 1 - desired_accuracy)
+    return int(np.ceil(num_trials))
