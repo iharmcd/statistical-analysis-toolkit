@@ -217,3 +217,30 @@ def calculate_number_of_trials(prob_success: float, desired_accuracy: float) -> 
 
     num_trials = log(1 - prob_success, 1 - desired_accuracy)
     return int(np.ceil(num_trials))
+
+
+def g_squared(contingency_table):
+    """
+    Function: g_squared
+    
+    Description:
+    This function calculates the G-squared statistic (also known as the likelihood-ratio test statistic) 
+    and its corresponding p-value for a given contingency table. The G-squared statistic is used to test 
+    the independence of two categorical variables, as an alternative to the chi-squared test. The function 
+    takes a contingency table as input and returns the G-squared statistic and the p-value.
+    
+    Parameters:
+    contingency_table (array-like): A two-dimensional contingency table, where the rows represent one categorical 
+    variable, and the columns represent another categorical variable. The values in the cells represent the frequency 
+    of observations for each combination of category levels.
+
+    Returns:
+    tuple: A tuple containing the G-squared statistic (float) and the p-value (float). The p-value is calculated 
+    using the chi-squared distribution with the degrees of freedom determined by the dimensions of the input 
+    contingency table.
+    
+    """
+    ct = np.asarray(contingency_table)
+    _, _, dof,exp_freq = st.chi2_contingency(ct)
+    g_squared = 2 * np.sum(ct * np.log(ct/exp_freq))
+    return g_squared, st.chi2.sf(g_squared,dof)
