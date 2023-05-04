@@ -217,39 +217,3 @@ def calculate_number_of_trials(prob_success: float, desired_accuracy: float) -> 
 
     num_trials = log(1 - prob_success, 1 - desired_accuracy)
     return int(np.ceil(num_trials))
-
-
-def proportions_effect_size(p1: float, uplift: float) -> float:
-    """
-    Calculate the standardized difference (effect size) for two proportions based on an initial proportion p1
-    and a relative uplift of the second proportion compared to the first.
-
-    Parameters
-    ----------
-    p1 : float
-        The proportion of the first group, value should be in the range [0, 1].
-
-    uplift : float
-        The expected relative increase (or decrease) of the second proportion compared to the first one.
-        For example, uplift = 0.1 means the second proportion is 10% larger than the first, and uplift = -0.1
-        means the second proportion is 10% smaller than the first.
-
-    Returns
-    -------
-    effect_size : float
-        The standardized difference (effect size) for the two proportions. A larger effect_size indicates
-        a larger difference between the two proportions.
-
-    Example
-    -------
-    >>> p1 = 0.1
-    >>> uplift = 0.2
-    >>> effect_size = proportions_effect_size(p1, uplift)
-    >>> print(effect_size)
-    0.12000000000000002
-    """
-    p2 = p1 * (1 + uplift)
-    var1, var2 = p1*(1-p1), p2*(1-p2)
-    pooled_sd = ((var1 + var2)/2)**.5
-    return abs(p2-p1)/pooled_sd
-
