@@ -1,20 +1,20 @@
 
 
-def bootstrap_ab(a,b, stat=np.mean, boot_size=10_000, random_state=None, alternative='two-sided', progress_bar=False, **kwargs) -> float:
-    if alternative not in ['two-sided','one-sided']:
-        raise ValueError(f"Received value: '{alternative}'. Сhoose 'two-sided' or 'one-sided'")
+def bootstrap_ab(a,b, stat=np.mean, confidence_level=0.95, boot_size=10_000, two_tailed=True, axis_0=True, random_state=None, **kwargs) -> float:
+    ''''''
     np.random.seed(random_state)
-    data = []
     size = max(len(a),len(b))
-    rng = tqdm(range(boot_size)) if progress_bar else range(boot_size)
-    for i in rng:
-        a_sample = np.random.choice(a, size=size, replace=True)
-        b_sample = np.random.choice(b, size=size, replace=True)
-        data.append(stat(a_sample,**kwargs) > stat(b_sample,**kwargs))
-    if alternative == 'two-sided':
-        return min(np.mean(data)*2, 2-np.mean(data)*2)
+    
+    a_sample, b_sample = np.random.choice(a, size=(size,boot_size), replace=True), np.random.choice(b, size=(size,boot_size), replace=True)
+    
+    if axis_0:
+        statistic_a, statistic_b = stat(a_sample, axis=0, **kwargs), stat(b_sample, axis=0, **kwargs)
     else:
-        return np.mean(data)
+        statistic_a, statistic_b = stat(a_sample, **kwargs), stat(b_sample, **kwargs)
+        
+    p = np.mean((statistic_b - statistic_a) > 0)
+    uplift_ci = np.quantile((statistic_b - statistic_a) / statistic_a, q=[(1-confidence_level)/2,1-(1-confidence_level)/2])
+    return min(p*2, 2-p*2) if two_tailed else p, tuple(uplift_ci)
       
       
 def monte_carlo_area(x, y, num_samples=1_000_000, random_state=None):
