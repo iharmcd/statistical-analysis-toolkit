@@ -255,3 +255,9 @@ def t_confidence_interval(a,b, confidence_level=0.95) -> tuple:
     lower = diff - t * (std_a**2 / n_a + std_b**2 / n_b)**.5
     upper = diff + t * (std_a**2 / n_a + std_b**2 / n_b)**.5
     return (lower,upper), (lower / m_a, upper / m_a)
+
+def proportions_uplift_ci(p1,p2,n1,n2, confidence_level=0.95):
+    Z = st.norm.ppf(1-(1-confidence_level)/2)
+    lower = (p2 - p1) - Z * ((p1 * (1 - p1) / n1) + (p2 * (1 - p2) / n2))**.5
+    upper = (p2 - p1) + Z * ((p1 * (1 - p1) / n1) + (p2 * (1 - p2) / n2))**.5
+    return lower/p1, upper/p1
