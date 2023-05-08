@@ -244,3 +244,14 @@ def g_squared(contingency_table):
     _, _, dof,exp_freq = st.chi2_contingency(ct)
     g_squared = 2 * np.sum(ct * np.log(ct/exp_freq))
     return g_squared, st.chi2.sf(g_squared,dof)
+
+
+def t_confidence_interval(a,b, confidence_level=0.95) -> tuple:
+    m_a, m_b = np.mean(a), np.mean(b)
+    std_a, std_b = np.std(a, ddof=1), np.std(b, ddof=1)
+    n_a, n_b = len(a), len(b)
+    t = st.t.ppf(1-(1-confidence_level) / 2, df = n_a + n_b - 2)
+    diff = m_b - m_a
+    lower = diff - t * (std_a**2 / n_a + std_b**2 / n_b)**.5
+    upper = diff + t * (std_a**2 / n_a + std_b**2 / n_b)**.5
+    return (lower,upper), (lower / m_a, upper / m_a)
