@@ -1,6 +1,4 @@
-
-
-def bootstrap_ab(a,b, stat=np.mean, confidence_level=0.95, boot_size=10_000, two_tailed=True, axis_0=True, random_state=None, **kwargs) -> float:
+def bootstrap_ab(a,b, stat=np.mean, confidence_level=0.95, boot_size=10_000, two_tailed=True, axis_0=True, random_state=None, **kwargs) -> tuple:
     ''''''
     np.random.seed(random_state)
     size = max(len(a),len(b))
@@ -13,8 +11,9 @@ def bootstrap_ab(a,b, stat=np.mean, confidence_level=0.95, boot_size=10_000, two
         statistic_a, statistic_b = stat(a_sample, **kwargs), stat(b_sample, **kwargs)
         
     p = np.mean((statistic_b - statistic_a) > 0)
+    diff_ci = np.quantile((statistic_b - statistic_a), q=[(1-confidence_level)/2,1-(1-confidence_level)/2])
     uplift_ci = np.quantile((statistic_b - statistic_a) / statistic_a, q=[(1-confidence_level)/2,1-(1-confidence_level)/2])
-    return min(p*2, 2-p*2) if two_tailed else p, tuple(uplift_ci)
+    return min(p*2, 2-p*2) if two_tailed else p, tuple(diff_ci), tuple(uplift_ci)
       
       
 def monte_carlo_area(x, y, num_samples=1_000_000, random_state=None):
