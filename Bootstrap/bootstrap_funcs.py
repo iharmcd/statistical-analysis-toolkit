@@ -12,8 +12,8 @@ def bootstrap_ab(a,b, stat=np.mean, confidence_level=0.95, boot_size=10_000, two
         
     p = np.mean((statistic_b - statistic_a) > 0)
     diff_ci = np.quantile((statistic_b - statistic_a), q=[(1-confidence_level)/2,1-(1-confidence_level)/2])
-    uplift_ci = np.quantile((statistic_b - statistic_a) / statistic_a, q=[(1-confidence_level)/2,1-(1-confidence_level)/2])
-    return min(p*2, 2-p*2) if two_tailed else p, tuple(diff_ci), tuple(uplift_ci)
+    #uplift_ci = np.quantile((statistic_b - statistic_a) / statistic_a, q=[(1-confidence_level)/2,1-(1-confidence_level)/2])
+    return min(p*2, 2-p*2) if two_tailed else p, tuple(diff_ci), #tuple(uplift_ci)
       
       
 def monte_carlo_area(x, y, num_samples=1_000_000, random_state=None):
