@@ -260,3 +260,30 @@ def proportions_uplift_ci(p1,p2,n1,n2, confidence_level=0.95):
     lower = (p2 - p1) - Z * ((p1 * (1 - p1) / n1) + (p2 * (1 - p2) / n2))**.5
     upper = (p2 - p1) + Z * ((p1 * (1 - p1) / n1) + (p2 * (1 - p2) / n2))**.5
     return lower/p1, upper/p1
+
+
+
+def monte_carlo_optimization(func, bounds, minimize=True, num_samples=1_000_000):
+    best_params = None
+    best_loss = None
+
+    lh = defaultdict(tuple)
+    for i in bounds:
+        lh['low'] += (i[0],)
+        lh['high'] += (i[1],)
+    
+    params = np.random.uniform(lh['low'], lh['high'], size=(num_samples,len(bounds)))
+    
+    for i in tqdm(params):
+        loss = func(i)
+        
+        if minimize:
+            if best_loss is None or loss < best_loss:
+                best_params = i
+                best_loss = loss
+        else:
+            if best_loss is None or loss > best_loss:
+                best_params = i
+                best_loss = loss
+                
+    return best_params, best_loss
