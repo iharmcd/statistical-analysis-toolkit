@@ -287,3 +287,22 @@ def monte_carlo_optimization(func, bounds, minimize=True, num_samples=1_000_000)
                 best_loss = loss
                 
     return best_params, best_loss
+
+
+
+def sample_size_ci(sigma, d, alpha=0.05):
+    """
+    Рассчитывает объем выборки для двустороннего доверительного интервала заданного уровня точности для нормального распределения
+
+    :param sigma: стандартное отклонение генеральной совокупности
+    :param d: половина уровня точности доверительного интервала
+    :param alpha: уровень значимости
+    :return: объем выборки
+    """
+
+    n = (st.norm.ppf(1 - alpha / 2) * sigma / d) ** 2
+    return int(n)
+
+def sample_size_ci_prop(p,d,alpha=0.05):
+    n = (st.norm.ppf(1-alpha/2) / d)**2 * p*(1-p)
+    return int(n)
