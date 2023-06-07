@@ -306,3 +306,28 @@ def sample_size_ci(sigma, d, alpha=0.05):
 def sample_size_ci_prop(p,d,alpha=0.05):
     n = (st.norm.ppf(1-alpha/2) / d)**2 * p*(1-p)
     return int(n)
+
+
+def get_lognormal_params(mean, std):
+    """
+    Function to estimate the parameters of a lognormal distribution.
+
+    Methodology: Data is generated from a normal distribution with the given mean and 
+    standard deviation. Then, the natural logarithm is taken from each data point.
+    The mean and standard deviation of these log-transformed points are calculated 
+    and returned as estimates of the lognormal distribution parameters.
+    This approach corresponds to the Monte Carlo method for estimating statistical parameters.
+
+    Parameters:
+    mean (float): Mean value for generating the normal distribution.
+    std (float): Standard deviation for generating the normal distribution.
+
+    Returns:
+    tuple: Estimates of the mean and standard deviation of the lognormal distribution.
+
+    Example:
+    mean, std = get_lognormal_params(0, 1)
+    print(f"Mean estimate: {mean}, Standard deviation estimate: {std}")
+    """
+    dist = np.log(np.abs(np.random.normal(mean, std, size=1_000_000)))
+    return dist.mean(), dist.std(ddof=1)
