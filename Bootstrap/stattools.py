@@ -302,7 +302,8 @@ class BayesAB:
             raise ValueError('You must have 2 elements in each list')
             
         control_a, test_a = nobs
-        control_b, test_b = counts[0] - control_a, counts[1] - test_a
+        control_total, test_total = counts
+        control_b, test_b = control_total - control_a, test_total - test_a
 
         np.random.seed(self.random_state)
         
