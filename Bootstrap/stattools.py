@@ -290,14 +290,20 @@ class BayesAB:
     import matplotlib.pyplot as plt
     import seaborn as sns
     '''
+    
     def __init__(self, size=100_000, conf_level=0.95, random_state=None):
         self.size = size
         self.random_state = random_state
         self.left_quant, self.right_quant = (1 - conf_level) / 2, 1 - (1-conf_level) / 2
 
-    def fit(self, control_a, control_total, test_a, test_total, prior=()):
-        control_b = control_total - control_a
-        test_b = test_total - test_a
+    def fit(self, nobs, counts, prior=()):
+    
+        if len(nobs) != 2 or len(counts) !=2:
+            raise ValueError('You must have 2 elements in each list')
+            
+        control_a, test_a = nobs
+        control_b, test_b = counts[0] - control_a, counts[1] - test_a
+
         np.random.seed(self.random_state)
         
         self.cr_control = control_a / control_total
