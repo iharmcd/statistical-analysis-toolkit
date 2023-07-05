@@ -1,5 +1,5 @@
 # Analytics
-This repository contains tools for statistical analysis like bootstrap for hypotesis testing, bootsrap for confidence intervals, correlation ratio, cramers v correlation; samples splitting; examples of using python libraries for solving analytical problems and other stuff.
+This repository provides a toolkit for comprehensive statistical analysis. It includes sophisticated methods for hypothesis testing using bootstrap and Bayesian inference, calculating correlations, implementing robust statistical measures, as well as methods for determining effect sizes and estimating confidence intervals.
 
 ---
 **At the moment, scripts are an unstructured set of functions or classes. The module is in the process of development**
