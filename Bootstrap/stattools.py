@@ -12,7 +12,7 @@ class BootstrapAB:
     
     '''https://en.wikipedia.org/wiki/Bootstrapping_(statistics)'''
 
-    def __init__(self, stat=np.mean, confidence_level=0.95, boot_size=10000, random_state=None, **kwargs):
+    def __init__(self, stat=np.mean, confidence_level=0.95, boot_size=10_000, random_state=None, **kwargs):
         self._boot_size = boot_size
         self._statistic = stat
         self._random_state = random_state
@@ -22,6 +22,7 @@ class BootstrapAB:
         self._kwargs = kwargs
                 
     def fit(self, sample_a, sample_b, progress_bar=False):
+        sample_a, sample_b = np.array(sample_a), np.array(sample_b)
         np.random.seed(self._random_state)
         size = max(len(sample_a),len(sample_b))
         bootstrap_data = []
@@ -30,28 +31,28 @@ class BootstrapAB:
             sub_a = np.random.choice(sample_a, size=size, replace = True)
             sub_b = np.random.choice(sample_b, size=size, replace = True)
             bootstrap_data.append([self._statistic(sub_a,**self._kwargs),self._statistic(sub_b,**self._kwargs)])
-            
+        
+        self.lift = (self._statistic(sample_b,**self._kwargs) - self._statistic(sample_a,**self._kwargs)) / self._statistic(sample_a,**self._kwargs)
         self._bootstrap_data = np.array(bootstrap_data)
         self.diffs = self._bootstrap_data[:,1] - self._bootstrap_data[:,0]
         self.a_ci = self._get_ci(self._bootstrap_data[:,0])
         self.b_ci = self._get_ci(self._bootstrap_data[:,1])
         self.diff_ci = self._get_ci(self.diffs)
+        self.uplift = self.diffs / self._bootstrap_data[:,0]
+        self.uplift_ci = self._get_ci(self.uplift)
         
-    def compute(self, alternative='two-sided'):
-        if alternative not in ['two-sided','one-sided']:
-            raise ValueError(f"Received value: '{alternative}'. Сhoose 'two-sided' or 'one-sided'")
+    def compute(self):
         p = np.mean(self.diffs > 0)
-        if alternative == 'two-sided':
-            return min(p*2, 2-p*2)
-        else:
-            return 1-p
+        pvalue = min(p*2, 2-p*2)
+        stats = namedtuple('BootstrapResult', ('pvalue', 'uplift','uplift_ci','diff_ci'))
+        return stats(pvalue, self.lift, self.uplift_ci, self.diff_ci)
     
     def _get_ci(self, data):
         self.quants = np.quantile(data, [self.left_quant, self.right_quant])
         return (self.quants[0].round(3),
                 self.quants[1].round(3))
     
-    def get_charts(self, figsize=(22,6), bins=20, stat='probability'):
+    def get_charts(self, figsize=(22,6), bins=50, stat='probability'):
     
         plt.figure(figsize=figsize)
         plt.subplot(1,2,1)
@@ -62,16 +63,27 @@ class BootstrapAB:
         plt.legend()
         plt.title(f'Distribution of {self._statistic.__name__}(s) for each group')
         plt.subplot(1,2,2)
-        bar = sns.histplot(self.diffs, bins=bins, stat=stat, color='#636EFA',
-                           label=f'{self._confidence_level:.0%} CI: {self.diff_ci[0]} - {self.diff_ci[1]}')
-        counts = []
-        for i in bar.patches:
-            counts.append(i.get_height())
-            if i.get_x() <= self.diff_ci[0] or i.get_x() >= self.diff_ci[1]:
+        h = sns.histplot(x=self.uplift,bins=bins,stat='probability',cumulative=True, color='#636EFA')
+        for i in h.patches:
+            if i.get_x() <= 0:
                 i.set_facecolor('#EF553B')
-        #plt.vlines(self.quants,ymin=0,ymax=max(counts),linestyle='--') 
-        plt.legend()
-        plt.title(f'Distribution of {self._statistic.__name__}(s) differences (B-A)')
+        plt.axvline(x=self.lift, color='black', linestyle='--')
+        #plt.axhline(ratio, color='black',linestyle='--')
+        plt.yticks(np.arange(0,1.1,0.1))
+        plt.title('Uplift')
+        plt.show()
+        
+        #bar = sns.histplot(self.diffs, bins=bins, stat=stat, color='#636EFA',
+        #                   label=f'{self._confidence_level:.0%} CI: {self.diff_ci[0]} - {self.diff_ci[1]}')
+        #counts = []
+        #for i in bar.patches:
+        #    counts.append(i.get_height())
+        #    if i.get_x() <= self.diff_ci[0] or i.get_x() >= self.diff_ci[1]:
+        #        i.set_facecolor('#EF553B')
+        ##plt.vlines(self.quants,ymin=0,ymax=max(counts),linestyle='--') 
+        #plt.legend()
+        #plt.title(f'Distribution of {self._statistic.__name__}(s) differences (B-A)')
+        #plt.show()
         
         
 
