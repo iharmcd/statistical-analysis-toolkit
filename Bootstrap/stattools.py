@@ -259,22 +259,27 @@ class TestAnalyzer:
             self.bins = bins
         return st.chisquare(np.histogram(self._p_values, bins=self.bins)[0])
     
-    def get_charts(self, figsize=(18,6), bins=20):
-        plt.figure(figsize=figsize)
-        plt.subplot(1,2,1)
-        sns.histplot(self._means, bins=bins, color='#19D3F3', stat='density', 
-                     label=f'AVG: {round(np.mean(self._means),3)}\nSTD: {round(np.std(self._means),3)}')
-        plt.legend()
-        plt.title('Bootstrap Mean(s) Distribution')
-        plt.subplot(1,2,2)
-        p_val_bins = 100 if self._alpha <= 0.01 else int(1/self._alpha)
-        sns.histplot(self._p_values, color='C3', stat='probability', bins=p_val_bins,label='p-value')
-        plt.axvline(self._alpha, color='black', linewidth=2, label=f'alpha={self._alpha}', ls='--')
-        hist = np.histogram(self._p_values, bins=p_val_bins)
-        plt.legend()
-        plt.title('P-values Distribution')
-        plt.show()
-        
+    def get_charts(self, figsize=(20,6), bins=20):
+        with sns.axes_style("whitegrid"): 
+            plt.figure(figsize=figsize)
+            plt.subplot(1,2,1)
+            sns.histplot(self._means, bins=bins, color='#19D3F3', stat='density', 
+                         label=f'AVG: {round(np.mean(self._means),3)}\nSTD: {round(np.std(self._means),3)}')
+            plt.legend()
+            plt.title('Bootstrap Mean(s) Distribution')
+            plt.subplot(1,2,2)
+            # p_val_bins = 100 if self._alpha <= 0.01 else int(1/self._alpha)
+            # sns.histplot(self._p_values, color='C3', stat='probability', bins=p_val_bins,label='p-value')
+            # plt.axvline(self._alpha, color='black', linewidth=2, label=f'alpha={self._alpha}', ls='--')
+            # hist = np.histogram(self._p_values, bins=p_val_bins)
+            # plt.legend()
+            # plt.title('P-values Distribution')
+            plt.plot([0, 1], [0, 1], linestyle='dashed', color='black', linewidth=2)  # Рисование пунктирной линии с заданной шириной
+            plt.vlines(x=0.05,ymin=0,ymax=1,linestyle='dotted', color='black', linewidth=2)
+            plt.plot(np.array(sorted(self._p_values)), np.array(sorted(np.linspace(0,1,self._boot_size))))
+            plt.title('P-values Distribution Estimate')
+            plt.ylabel('p-value')
+            plt.show()
 
         
 
