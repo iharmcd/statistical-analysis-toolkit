@@ -55,14 +55,20 @@ class BootstrapAB:
     def get_charts(self, figsize=(22,6), bins=50, stat='probability'):
     
         plt.figure(figsize=figsize)
-        plt.subplot(1,2,1)
+        plt.subplot(1,3,1)
         sns.histplot(self._bootstrap_data[:,0], bins=bins,  stat=stat, color='#19D3F3',
                     label=f'A Sample. {self._confidence_level:.0%} CI: {self.a_ci[0]} - {self.a_ci[1]}')
         sns.histplot(self._bootstrap_data[:,1],bins=bins,  stat=stat, color='C1',
                     label=f'B Sample. {self._confidence_level:.0%} CI: {self.b_ci[0]} - {self.b_ci[1]}')
         plt.legend()
         plt.title(f'Distribution of {self._statistic.__name__}(s) for each group')
-        plt.subplot(1,2,2)
+        plt.subplot(1,3,2)
+        bar = sns.histplot(self.diffs, bins=bins, stat=stat, color='#DAA520',
+                           #label=f'{self._confidence_level:.0%} CI: {self.diff_ci[0]} - {self.diff_ci[1]}'
+                          )
+        #plt.legend()
+        plt.title(f'Distribution of {self._statistic.__name__}(s) differences (B-A)')
+        plt.subplot(1,3,3)
         h = sns.histplot(x=self.uplift,bins=bins,stat='probability',cumulative=True, color='#636EFA')
         for i in h.patches:
             if i.get_x() <= 0:
