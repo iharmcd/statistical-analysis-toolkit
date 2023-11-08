@@ -437,3 +437,30 @@ def bayes_duration_estimator(cr_baseline,
 
     result = namedtuple('EstimatorResult',('days', 'total_sample_size', 'power'))    
     return result(days, sample_size, power)
+
+
+def bayesian_continuous(mean: np.array, 
+                     std: np.array, 
+                     n: np.array, 
+                     cofidence_level=0.95, 
+                     size=100_000, 
+                     random_state=None):
+    
+    if len(mean) != 2 or len(std) != 2 or len(n) != 2:
+        raise ValueError('Len of all collections must be equal to 2')
+    else:
+        mean,std,n = np.array(mean),np.array(std),np.array(n)
+        sem = std / n**.5
+        lift = (mean[1] - mean[0]) / mean[0]
+    q_l, q_h = (1 - cofidence_level) / 2, 1 - (1 - cofidence_level) / 2
+        
+    np.random.seed(random_state)
+    a = np.random.normal(mean[0],sem[0], size=10_000)
+    b = np.random.normal(mean[1],sem[1], size=10_000)
+    diff_ci = np.quantile(b-a,q=[q_l,q_h])
+    proba = np.mean(b > a)
+    pvalue = min(2*proba,2-2*proba)
+    uplift_ci = np.quantile((b-a)/a,q=[q_l,q_h])
+    
+    stats = namedtuple('BayesResult', ('pvalue', 'uplift','uplift_ci','diff_ci'))
+    return stats(pvalue, lift, uplift_ci, diff_ci)
