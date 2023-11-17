@@ -351,15 +351,21 @@ class BayesAB:
     def uplift(self, before, after):
         return (after - before) / before
         
-    def compute(self):
+    def compute(self, significance='probability'):
         proba = np.mean(self.beta_test > self.beta_control)
         #loss_control =  np.mean(np.maximum(self.beta_test - self.beta_control, 0))
         #loss_test =  np.mean(np.maximum(self.beta_control - self.beta_test, 0))
         loss_control = np.mean(np.maximum(self.uplift(self.beta_control, self.beta_test),0)) #uplift_loss_c
         loss_test = np.mean(np.maximum(self.uplift(self.beta_test, self.beta_control),0)) #uplift_loss_t
         ci = np.quantile(self.uplift(self.beta_control, self.beta_test), q=[self.left_quant, self.right_quant]).tolist()
-        stats = namedtuple('BayesResult', ('proba', 'uplift','uplift_ci','control_loss','test_loss'))
-        return stats(proba, self.lift, ci, loss_control, loss_test)
+        if significance == 'probability':
+            significance_info = 'proba'
+            significance_result = proba
+        elif significance == 'pvalue':
+            significance_info = 'pvalue'
+            significance_result = min(2*proba,2-2*proba)
+        stats = namedtuple('BayesResult', (significance_info, 'uplift','uplift_ci','control_loss','test_loss'))
+        return stats(significance_result, self.lift, ci, loss_control, loss_test)
     
     def get_charts(self, figsize=(22,6), bins=50):
         thresh = 0
@@ -440,11 +446,13 @@ def bayes_duration_estimator(cr_baseline,
 
 
 def bayesian_continuous(mean: np.array, 
-                     std: np.array, 
-                     n: np.array, 
-                     cofidence_level=0.95, 
-                     size=100_000, 
-                     random_state=None):
+                        std: np.array, 
+                        n: np.array, 
+                        cofidence_level=0.95, 
+                        size=100_000, 
+                        random_state=None,
+                        significance='pvalue'
+                       ):
     
     if len(mean) != 2 or len(std) != 2 or len(n) != 2:
         raise ValueError('Len of all collections must be equal to 2')
@@ -455,12 +463,18 @@ def bayesian_continuous(mean: np.array,
     q_l, q_h = (1 - cofidence_level) / 2, 1 - (1 - cofidence_level) / 2
         
     np.random.seed(random_state)
-    a = np.random.normal(mean[0],sem[0], size=10_000)
-    b = np.random.normal(mean[1],sem[1], size=10_000)
-    diff_ci = np.quantile(b-a,q=[q_l,q_h])
-    proba = np.mean(b > a)
-    pvalue = min(2*proba,2-2*proba)
+    a = np.random.normal(mean[0],sem[0], size=size)
+    b = np.random.normal(mean[1],sem[1], size=size)
+    diff = b-a
+    diff_ci = np.quantile(diff,q=[q_l,q_h])
     uplift_ci = np.quantile((b-a)/a,q=[q_l,q_h])
+    if significance == 'probability':
+            significance_info = 'proba'
+            significance_result = np.mean(b>a)
+    elif significance == 'pvalue':
+            significance_info = 'pvalue'
+            p = st.norm.cdf(x=0,loc=np.mean(diff),scale=np.std(diff))
+            significance_result = min(2*p,2-2*p)
     
-    stats = namedtuple('BayesResult', ('pvalue', 'uplift','uplift_ci','diff_ci'))
-    return stats(pvalue, lift, uplift_ci, diff_ci)
+    stats = namedtuple('BayesResult', (significance_info, 'uplift','uplift_ci','diff_ci'))
+    return stats(significance_result, lift, uplift_ci, diff_ci)
